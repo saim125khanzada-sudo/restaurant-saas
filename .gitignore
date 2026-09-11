@@ -1,0 +1,38 @@
+﻿## Build outputs
+bin/
+obj/
+out/
+dist/
+.next/
+node_modules/
+
+## IDE and Editors
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+
+## Environment and Secrets (CRITICAL)
+.env
+.env.local
+.env.production
+*.pem
+*.key
+*.pfx
+secrets/
+*firebase-adminsdk*.json
+google-services.json
+GoogleService-Info.plist
+
+## OS generated
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+## Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/

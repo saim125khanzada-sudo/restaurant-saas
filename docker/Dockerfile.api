@@ -1,0 +1,22 @@
+﻿FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY ["src/Backend/RestaurantSaaS.SharedKernel/RestaurantSaaS.SharedKernel.csproj", "src/Backend/RestaurantSaaS.SharedKernel/"]
+COPY ["src/Backend/RestaurantSaaS.Domain/RestaurantSaaS.Domain.csproj", "src/Backend/RestaurantSaaS.Domain/"]
+COPY ["src/Backend/RestaurantSaaS.Application/RestaurantSaaS.Application.csproj", "src/Backend/RestaurantSaaS.Application/"]
+COPY ["src/Backend/RestaurantSaaS.Infrastructure/RestaurantSaaS.Infrastructure.csproj", "src/Backend/RestaurantSaaS.Infrastructure/"]
+COPY ["src/Backend/RestaurantSaaS.Api/RestaurantSaaS.Api.csproj", "src/Backend/RestaurantSaaS.Api/"]
+
+RUN dotnet restore "src/Backend/RestaurantSaaS.Api/RestaurantSaaS.Api.csproj"
+
+COPY . .
+WORKDIR "/src/src/Backend/RestaurantSaaS.Api"
+RUN dotnet build "RestaurantSaaS.Api.csproj" -c Release -o /app/build
+RUN dotnet publish "RestaurantSaaS.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+EXPOSE 8080
+EXPOSE 8443
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "RestaurantSaaS.Api.dll"]
