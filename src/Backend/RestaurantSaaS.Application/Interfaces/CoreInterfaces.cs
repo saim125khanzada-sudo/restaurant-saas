@@ -36,6 +36,15 @@ public interface IApplicationDbContext
     DbSet<RiderLocationHistory> RiderLocationHistories { get; }
     DbSet<RiderCashReconciliation> RiderCashReconciliations { get; }
 
+    // Phase 6: Inventory & Procurement
+    DbSet<Vendor> Vendors { get; }
+    DbSet<Ingredient> Ingredients { get; }
+    DbSet<RecipeItem> RecipeItems { get; }
+    DbSet<StockLevel> StockLevels { get; }
+    DbSet<StockMovement> StockMovements { get; }
+    DbSet<PurchaseOrder> PurchaseOrders { get; }
+    DbSet<PurchaseOrderItem> PurchaseOrderItems { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

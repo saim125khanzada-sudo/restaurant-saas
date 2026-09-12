@@ -48,6 +48,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<RiderLocationHistory> RiderLocationHistories => Set<RiderLocationHistory>();
     public DbSet<RiderCashReconciliation> RiderCashReconciliations => Set<RiderCashReconciliation>();
 
+    // Phase 6: Inventory & Procurement
+    public DbSet<Vendor> Vendors => Set<Vendor>();
+    public DbSet<Ingredient> Ingredients => Set<Ingredient>();
+    public DbSet<RecipeItem> RecipeItems => Set<RecipeItem>();
+    public DbSet<StockLevel> StockLevels => Set<StockLevel>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
+    public DbSet<PurchaseOrderItem> PurchaseOrderItems => Set<PurchaseOrderItem>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -360,6 +369,85 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             b.HasIndex(x => new { x.RiderId, x.ShiftDate });
         });
 
+        // Phase 6: Inventory & Procurement Mapping
+        modelBuilder.Entity<Vendor>(b =>
+        {
+            b.ToTable("vendors");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            b.Property(x => x.ContactPerson).HasMaxLength(100);
+            b.Property(x => x.Phone).HasMaxLength(30);
+            b.Property(x => x.Email).HasMaxLength(100);
+            b.Property(x => x.TaxNumber).HasMaxLength(50);
+            b.HasIndex(x => new { x.RestaurantId, x.Name });
+        });
+
+        modelBuilder.Entity<Ingredient>(b =>
+        {
+            b.ToTable("ingredients");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            b.Property(x => x.UnitOfMeasure).HasMaxLength(20).IsRequired();
+            b.Property(x => x.ReorderThreshold).HasPrecision(12, 3);
+            b.Property(x => x.CostPerUnit).HasPrecision(18, 2);
+            b.HasIndex(x => new { x.RestaurantId, x.Name });
+        });
+
+        modelBuilder.Entity<RecipeItem>(b =>
+        {
+            b.ToTable("recipe_items");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.QuantityRequired).HasPrecision(12, 3);
+            b.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.ProductVariant).WithMany().HasForeignKey(x => x.ProductVariantId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Ingredient).WithMany().HasForeignKey(x => x.IngredientId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.ProductId, x.ProductVariantId, x.IngredientId });
+        });
+
+        modelBuilder.Entity<StockLevel>(b =>
+        {
+            b.ToTable("stock_levels");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.QuantityOnHand).HasPrecision(12, 3);
+            b.HasOne(x => x.Branch).WithMany().HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Ingredient).WithMany().HasForeignKey(x => x.IngredientId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.BranchId, x.IngredientId }).IsUnique();
+        });
+
+        modelBuilder.Entity<StockMovement>(b =>
+        {
+            b.ToTable("stock_movements");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Quantity).HasPrecision(12, 3);
+            b.Property(x => x.UnitCost).HasPrecision(18, 2);
+            b.Property(x => x.Reason).HasMaxLength(250);
+            b.HasOne(x => x.Ingredient).WithMany().HasForeignKey(x => x.IngredientId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.RestaurantId, x.BranchId, x.IngredientId, x.CreatedAt });
+        });
+
+        modelBuilder.Entity<PurchaseOrder>(b =>
+        {
+            b.ToTable("purchase_orders");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.PoNumber).HasMaxLength(50).IsRequired();
+            b.Property(x => x.TotalAmount).HasPrecision(18, 2);
+            b.Property(x => x.Notes).HasMaxLength(500);
+            b.HasOne(x => x.Vendor).WithMany().HasForeignKey(x => x.VendorId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.RestaurantId, x.PoNumber }).IsUnique();
+        });
+
+        modelBuilder.Entity<PurchaseOrderItem>(b =>
+        {
+            b.ToTable("purchase_order_items");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.QuantityOrdered).HasPrecision(12, 3);
+            b.Property(x => x.QuantityReceived).HasPrecision(12, 3);
+            b.Property(x => x.UnitPrice).HasPrecision(18, 2);
+            b.Property(x => x.TotalPrice).HasPrecision(18, 2);
+            b.HasOne(x => x.Ingredient).WithMany().HasForeignKey(x => x.IngredientId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<PurchaseOrder>().WithMany(p => p.Items).HasForeignKey(x => x.PurchaseOrderId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         // GLOBAL MULTI-TENANCY QUERY FILTERS
         modelBuilder.Entity<Branch>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<User>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
@@ -386,6 +474,14 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<DeliveryDispatch>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<RiderLocationHistory>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<RiderCashReconciliation>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+
+        modelBuilder.Entity<Vendor>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<Ingredient>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<RecipeItem>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<StockLevel>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<StockMovement>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<PurchaseOrder>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<PurchaseOrderItem>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
