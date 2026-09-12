@@ -24,6 +24,13 @@ public interface IApplicationDbContext
     DbSet<FloorSection> FloorSections { get; }
     DbSet<RestaurantTable> RestaurantTables { get; }
 
+    // Phase 3: Orders & POS Engine
+    DbSet<Order> Orders { get; }
+    DbSet<OrderItem> OrderItems { get; }
+    DbSet<OrderItemAddon> OrderItemAddons { get; }
+    DbSet<OrderStatusHistory> OrderStatusHistories { get; }
+    DbSet<Payment> Payments { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

@@ -36,6 +36,13 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<FloorSection> FloorSections => Set<FloorSection>();
     public DbSet<RestaurantTable> RestaurantTables => Set<RestaurantTable>();
 
+    // Phase 3: Orders & POS Engine
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<OrderItemAddon> OrderItemAddons => Set<OrderItemAddon>();
+    public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
+    public DbSet<Payment> Payments => Set<Payment>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -128,7 +135,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             b.HasIndex(a => new { a.RestaurantId, a.CreatedAt });
         });
 
-        // Phase 2: Categories
+        // Phase 2: Catalog & Facilities
         modelBuilder.Entity<Category>(b =>
         {
             b.ToTable("categories");
@@ -141,7 +148,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // Phase 2: Products
         modelBuilder.Entity<Product>(b =>
         {
             b.ToTable("products");
@@ -158,7 +164,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // Phase 2: Product Variants
         modelBuilder.Entity<ProductVariant>(b =>
         {
             b.ToTable("product_variants");
@@ -172,7 +177,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Phase 2: Addons & ProductAddons
         modelBuilder.Entity<Addon>(b =>
         {
             b.ToTable("addons");
@@ -197,7 +201,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Phase 2: FloorSections & Tables
         modelBuilder.Entity<FloorSection>(b =>
         {
             b.ToTable("floor_sections");
@@ -225,6 +228,88 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
+        // Phase 3: Orders, Items, Payments & History
+        modelBuilder.Entity<Order>(b =>
+        {
+            b.ToTable("orders");
+            b.HasKey(o => o.Id);
+            b.HasIndex(o => new { o.RestaurantId, o.OrderNumber }).IsUnique();
+            b.HasIndex(o => new { o.RestaurantId, o.CreatedAt });
+            b.HasIndex(o => new { o.RestaurantId, o.Status });
+            b.HasIndex(o => o.IdempotencyKey);
+            b.Property(o => o.OrderNumber).HasMaxLength(50).IsRequired();
+            b.Property(o => o.Subtotal).HasPrecision(18, 2);
+            b.Property(o => o.TaxTotal).HasPrecision(18, 2);
+            b.Property(o => o.DiscountTotal).HasPrecision(18, 2);
+            b.Property(o => o.GrandTotal).HasPrecision(18, 2);
+            b.HasOne(o => o.Branch)
+                .WithMany()
+                .HasForeignKey(o => o.BranchId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(o => o.Table)
+                .WithMany()
+                .HasForeignKey(o => o.TableId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne(o => o.Waiter)
+                .WithMany()
+                .HasForeignKey(o => o.WaiterId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne(o => o.Rider)
+                .WithMany()
+                .HasForeignKey(o => o.RiderId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<OrderItem>(b =>
+        {
+            b.ToTable("order_items");
+            b.HasKey(oi => oi.Id);
+            b.HasIndex(oi => oi.OrderId);
+            b.Property(oi => oi.ItemName).HasMaxLength(150).IsRequired();
+            b.Property(oi => oi.UnitPrice).HasPrecision(18, 2);
+            b.Property(oi => oi.TotalPrice).HasPrecision(18, 2);
+            b.HasOne(oi => oi.Order)
+                .WithMany(o => o.Items)
+                .HasForeignKey(oi => oi.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OrderItemAddon>(b =>
+        {
+            b.ToTable("order_item_addons");
+            b.HasKey(oia => oia.Id);
+            b.Property(oia => oia.AddonName).HasMaxLength(100).IsRequired();
+            b.Property(oia => oia.UnitPrice).HasPrecision(18, 2);
+            b.Property(oia => oia.TotalPrice).HasPrecision(18, 2);
+            b.HasOne(oia => oia.OrderItem)
+                .WithMany(oi => oi.Addons)
+                .HasForeignKey(oia => oia.OrderItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OrderStatusHistory>(b =>
+        {
+            b.ToTable("order_status_history");
+            b.HasKey(h => h.Id);
+            b.HasIndex(h => new { h.OrderId, h.CreatedAt });
+            b.HasOne(h => h.Order)
+                .WithMany(o => o.StatusHistory)
+                .HasForeignKey(h => h.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Payment>(b =>
+        {
+            b.ToTable("payments");
+            b.HasKey(p => p.Id);
+            b.HasIndex(p => new { p.RestaurantId, p.ProcessedAt });
+            b.Property(p => p.Amount).HasPrecision(18, 2);
+            b.HasOne(p => p.Order)
+                .WithMany(o => o.Payments)
+                .HasForeignKey(p => p.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // GLOBAL MULTI-TENANCY QUERY FILTERS
         modelBuilder.Entity<Branch>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<User>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
@@ -234,7 +319,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<DeviceSession>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<AuditLog>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
 
-        // Catalog & Tables Filters
         modelBuilder.Entity<Category>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<Product>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<ProductVariant>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
@@ -242,6 +326,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<ProductAddon>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<FloorSection>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<RestaurantTable>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+
+        modelBuilder.Entity<Order>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<OrderItem>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<OrderItemAddon>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<OrderStatusHistory>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<Payment>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

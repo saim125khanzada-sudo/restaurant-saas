@@ -28,6 +28,8 @@ builder.Services.AddScoped<ICurrentTenantService>(sp => sp.GetRequiredService<Cu
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IMfaService, MfaService>();
+builder.Services.AddScoped<RestaurantSaaS.Application.Interfaces.IOrderNotificationService, RestaurantSaaS.Infrastructure.Services.OrderNotificationService>();
+builder.Services.AddSignalR();
 
 // 3. MediatR & FluentValidation
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(LoginCommand).Assembly));
@@ -140,7 +142,9 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<RestaurantSaaS.Infrastructure.Hubs.OrderHub>("/hubs/orders");
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTimeOffset.UtcNow }));
 
 app.Run();
+
 
