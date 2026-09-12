@@ -74,6 +74,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<TaxRule> TaxRules => Set<TaxRule>();
     public DbSet<FiscalInvoiceRecord> FiscalInvoiceRecords => Set<FiscalInvoiceRecord>();
 
+    // Phase 10: Subscriptions & Tenant Plans
+    public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
+    public DbSet<TenantSubscription> TenantSubscriptions => Set<TenantSubscription>();
+    public DbSet<SubscriptionInvoice> SubscriptionInvoices => Set<SubscriptionInvoice>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -609,6 +614,34 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             b.HasIndex(x => new { x.OrderId });
         });
 
+        // Phase 10: Subscriptions & Tenant Plans
+        modelBuilder.Entity<SubscriptionPlan>(b =>
+        {
+            b.ToTable("subscription_plans");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            b.Property(x => x.MonthlyPrice).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<TenantSubscription>(b =>
+        {
+            b.ToTable("tenant_subscriptions");
+            b.HasKey(x => x.Id);
+            b.HasOne(x => x.Plan).WithMany(p => p.Subscriptions).HasForeignKey(x => x.PlanId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.Restaurant).WithMany().HasForeignKey(x => x.RestaurantId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.RestaurantId, x.Status });
+        });
+
+        modelBuilder.Entity<SubscriptionInvoice>(b =>
+        {
+            b.ToTable("subscription_invoices");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.InvoiceNumber).HasMaxLength(100).IsRequired();
+            b.Property(x => x.Amount).HasPrecision(18, 2);
+            b.HasOne(x => x.Subscription).WithMany(s => s.Invoices).HasForeignKey(x => x.TenantSubscriptionId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.RestaurantId, x.InvoiceNumber }).IsUnique();
+        });
+
         // GLOBAL MULTI-TENANCY QUERY FILTERS
         modelBuilder.Entity<Branch>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<User>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
@@ -657,6 +690,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
         modelBuilder.Entity<TaxRule>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<FiscalInvoiceRecord>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+
+        modelBuilder.Entity<TenantSubscription>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<SubscriptionInvoice>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

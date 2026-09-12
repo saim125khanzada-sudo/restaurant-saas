@@ -62,6 +62,11 @@ public interface IApplicationDbContext
     DbSet<TaxRule> TaxRules { get; }
     DbSet<FiscalInvoiceRecord> FiscalInvoiceRecords { get; }
 
+    // Phase 10: Subscriptions & Tenant Plans
+    DbSet<SubscriptionPlan> SubscriptionPlans { get; }
+    DbSet<TenantSubscription> TenantSubscriptions { get; }
+    DbSet<SubscriptionInvoice> SubscriptionInvoices { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

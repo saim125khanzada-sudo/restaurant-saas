@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using RestaurantSaaS.Application.DTOs;
 using RestaurantSaaS.Application.Interfaces;
@@ -23,6 +23,24 @@ public class CreateBranchCommandHandler : IRequestHandler<CreateBranchCommand, R
     {
         if (!_tenantService.RestaurantId.HasValue)
             return Result<BranchDto>.Failure("Tenant context is required.");
+
+        var restaurantId = _tenantService.RestaurantId.Value;
+
+        // Phase 10: Enforce Tenant Subscription Branch Limits
+        var activeSub = await _context.TenantSubscriptions
+            .Include(s => s.Plan)
+            .Where(s => s.RestaurantId == restaurantId && s.Status == SubscriptionStatus.Active)
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var maxAllowedBranches = activeSub?.Plan.MaxBranches ?? 1; // Default to 1 for Free Trial
+        var currentBranchCount = await _context.Branches.CountAsync(b => b.RestaurantId == restaurantId, cancellationToken);
+
+        if (currentBranchCount >= maxAllowedBranches)
+        {
+            var planName = activeSub?.Plan.Name ?? "Free Trial";
+            return Result<BranchDto>.Failure($"Branch limit reached ({currentBranchCount}/{maxAllowedBranches}) for plan '{planName}'. Please upgrade your subscription.");
+        }
 
         var req = command.Request;
         var normalizedCode = req.BranchCode.Trim().ToUpperInvariant();
