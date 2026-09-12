@@ -51,6 +51,13 @@ public interface IApplicationDbContext
     DbSet<JournalLine> JournalLines { get; }
     DbSet<CashRegisterSession> CashRegisterSessions { get; }
 
+    // Phase 8: HR & Payroll
+    DbSet<Employee> Employees { get; }
+    DbSet<AttendanceRecord> AttendanceRecords { get; }
+    DbSet<StaffAdvance> StaffAdvances { get; }
+    DbSet<PayrollRun> PayrollRuns { get; }
+    DbSet<PayrollDetail> PayrollDetails { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

@@ -63,6 +63,13 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<JournalLine> JournalLines => Set<JournalLine>();
     public DbSet<CashRegisterSession> CashRegisterSessions => Set<CashRegisterSession>();
 
+    // Phase 8: HR & Payroll
+    public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
+    public DbSet<StaffAdvance> StaffAdvances => Set<StaffAdvance>();
+    public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
+    public DbSet<PayrollDetail> PayrollDetails => Set<PayrollDetail>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -506,6 +513,73 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             b.HasIndex(x => new { x.RestaurantId, x.BranchId, x.OpenedAt });
         });
 
+        // Phase 8: HR & Payroll Mapping
+        modelBuilder.Entity<Employee>(b =>
+        {
+            b.ToTable("employees");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.EmployeeCode).HasMaxLength(30).IsRequired();
+            b.Property(x => x.FullName).HasMaxLength(150).IsRequired();
+            b.Property(x => x.Designation).HasMaxLength(100).IsRequired();
+            b.Property(x => x.Phone).HasMaxLength(30);
+            b.Property(x => x.Email).HasMaxLength(100);
+            b.Property(x => x.NationalId).HasMaxLength(50);
+            b.Property(x => x.BiometricUserId).HasMaxLength(50);
+            b.Property(x => x.BaseMonthlySalary).HasPrecision(18, 2);
+            b.Property(x => x.HourlyOvertimeRate).HasPrecision(18, 2);
+            b.HasOne(x => x.Branch).WithMany().HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+            b.HasIndex(x => new { x.RestaurantId, x.EmployeeCode }).IsUnique();
+        });
+
+        modelBuilder.Entity<AttendanceRecord>(b =>
+        {
+            b.ToTable("attendance_records");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.TotalHoursWorked).HasPrecision(5, 2);
+            b.Property(x => x.OvertimeHours).HasPrecision(5, 2);
+            b.Property(x => x.DeviceIdentifier).HasMaxLength(50);
+            b.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.RestaurantId, x.BranchId, x.WorkDate });
+            b.HasIndex(x => new { x.EmployeeId, x.WorkDate });
+        });
+
+        modelBuilder.Entity<StaffAdvance>(b =>
+        {
+            b.ToTable("staff_advances");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.PrincipalAmount).HasPrecision(18, 2);
+            b.Property(x => x.MonthlyDeductionAmount).HasPrecision(18, 2);
+            b.Property(x => x.RemainingBalance).HasPrecision(18, 2);
+            b.Property(x => x.Purpose).HasMaxLength(250);
+            b.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.RestaurantId, x.EmployeeId });
+        });
+
+        modelBuilder.Entity<PayrollRun>(b =>
+        {
+            b.ToTable("payroll_runs");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.TotalGrossPay).HasPrecision(18, 2);
+            b.Property(x => x.TotalDeductions).HasPrecision(18, 2);
+            b.Property(x => x.TotalNetPay).HasPrecision(18, 2);
+            b.HasIndex(x => new { x.RestaurantId, x.BranchId, x.Year, x.Month }).IsUnique();
+        });
+
+        modelBuilder.Entity<PayrollDetail>(b =>
+        {
+            b.ToTable("payroll_details");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.BaseSalary).HasPrecision(18, 2);
+            b.Property(x => x.OvertimePay).HasPrecision(18, 2);
+            b.Property(x => x.AdvanceDeduction).HasPrecision(18, 2);
+            b.Property(x => x.OtherDeductions).HasPrecision(18, 2);
+            b.Property(x => x.NetSalaryPayable).HasPrecision(18, 2);
+            b.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<PayrollRun>().WithMany(p => p.Details).HasForeignKey(x => x.PayrollRunId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.PayrollRunId, x.EmployeeId });
+        });
+
         // GLOBAL MULTI-TENANCY QUERY FILTERS
         modelBuilder.Entity<Branch>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<User>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
@@ -545,6 +619,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<JournalEntry>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<JournalLine>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<CashRegisterSession>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+
+        modelBuilder.Entity<Employee>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<AttendanceRecord>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<StaffAdvance>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<PayrollRun>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<PayrollDetail>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
