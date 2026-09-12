@@ -31,6 +31,7 @@ builder.Services.AddSingleton<IMfaService, MfaService>();
 builder.Services.AddScoped<RestaurantSaaS.Application.Interfaces.IOrderNotificationService, RestaurantSaaS.Infrastructure.Services.OrderNotificationService>();
 builder.Services.AddScoped<RestaurantSaaS.Application.Taxation.Services.ITaxCalculationService, RestaurantSaaS.Application.Taxation.Services.TaxCalculationService>();
 builder.Services.AddScoped<RestaurantSaaS.Application.Taxation.Services.IFbrFiscalService, RestaurantSaaS.Application.Taxation.Services.FbrFiscalService>();
+builder.Services.AddScoped<RestaurantSaaS.Application.Security.IAuditLogService, RestaurantSaaS.Application.Security.AuditLogService>();
 builder.Services.AddSignalR();
 
 // 3. MediatR & FluentValidation
@@ -139,6 +140,7 @@ app.UseSwaggerUI(c =>
 // Redirect root / to /swagger
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
+app.UseMiddleware<RestaurantSaaS.Api.Middleware.SecurityHeadersMiddleware>();
 app.UseAuthentication();
 app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();

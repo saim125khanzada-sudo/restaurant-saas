@@ -168,6 +168,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         {
             b.ToTable("audit_logs");
             b.HasKey(a => a.Id);
+            b.Property(a => a.PreviousHash).HasMaxLength(64).IsRequired();
+            b.Property(a => a.CurrentHash).HasMaxLength(64).IsRequired();
             b.HasIndex(a => new { a.RestaurantId, a.CreatedAt });
         });
 

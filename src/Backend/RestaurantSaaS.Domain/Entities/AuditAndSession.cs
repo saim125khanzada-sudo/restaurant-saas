@@ -1,4 +1,4 @@
-﻿using RestaurantSaaS.SharedKernel.Common;
+using RestaurantSaaS.SharedKernel.Common;
 using RestaurantSaaS.SharedKernel.Interfaces;
 
 namespace RestaurantSaaS.Domain.Entities;
@@ -31,4 +31,8 @@ public class AuditLog : BaseEntity, IMultiTenantEntity
     public string? NewValuesJson { get; set; }
     public string IpAddress { get; set; } = string.Empty;
     public string UserAgent { get; set; } = string.Empty;
+
+    // Phase 11: Cryptographic Tamper-Proof Chain
+    public string PreviousHash { get; set; } = "GENESIS";
+    public string CurrentHash { get; set; } = string.Empty;
 }
