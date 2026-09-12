@@ -1,0 +1,57 @@
+﻿services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: restaurant_saas_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: restaurant_saas_prod
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d restaurant_saas_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: restaurant_saas_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: restaurant_saas_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DATABASE_CONNECTION_STRING=Host=postgres;Port=5432;Database=restaurant_saas_prod;Username=postgres;Password=postgrespassword;
+      - REDIS_CONNECTION_STRING=redis:6379
+      - JWT_SECRET=ProductionSuperSecretKeyForMultiTenantRestaurantSaaSPlatform2026!MustBeVeryLong
+      - JWT_ISSUER=RestaurantSaaS.Api
+      - JWT_AUDIENCE=RestaurantSaaS.Clients
+
+volumes:
+  postgres_data:
+  redis_data:
