@@ -45,6 +45,12 @@ public interface IApplicationDbContext
     DbSet<PurchaseOrder> PurchaseOrders { get; }
     DbSet<PurchaseOrderItem> PurchaseOrderItems { get; }
 
+    // Phase 7: Double-Entry Accounting
+    DbSet<Account> Accounts { get; }
+    DbSet<JournalEntry> JournalEntries { get; }
+    DbSet<JournalLine> JournalLines { get; }
+    DbSet<CashRegisterSession> CashRegisterSessions { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

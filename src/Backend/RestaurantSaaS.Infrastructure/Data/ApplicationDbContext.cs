@@ -57,6 +57,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
     public DbSet<PurchaseOrderItem> PurchaseOrderItems => Set<PurchaseOrderItem>();
 
+    // Phase 7: Double-Entry Accounting
+    public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
+    public DbSet<JournalLine> JournalLines => Set<JournalLine>();
+    public DbSet<CashRegisterSession> CashRegisterSessions => Set<CashRegisterSession>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -448,6 +454,58 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             b.HasOne<PurchaseOrder>().WithMany(p => p.Items).HasForeignKey(x => x.PurchaseOrderId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Phase 7: Double-Entry Accounting Mapping
+        modelBuilder.Entity<Account>(b =>
+        {
+            b.ToTable("accounts");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.AccountCode).HasMaxLength(30).IsRequired();
+            b.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            b.Property(x => x.Currency).HasMaxLength(10).IsRequired();
+            b.Property(x => x.Description).HasMaxLength(250);
+            b.HasIndex(x => new { x.RestaurantId, x.AccountCode }).IsUnique();
+        });
+
+        modelBuilder.Entity<JournalEntry>(b =>
+        {
+            b.ToTable("journal_entries");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.EntryNumber).HasMaxLength(50).IsRequired();
+            b.Property(x => x.Description).HasMaxLength(500).IsRequired();
+            b.Property(x => x.TotalDebit).HasPrecision(18, 2);
+            b.Property(x => x.TotalCredit).HasPrecision(18, 2);
+            b.Property(x => x.SourceDocumentType).HasMaxLength(50);
+            b.HasIndex(x => new { x.RestaurantId, x.EntryNumber }).IsUnique();
+            b.HasIndex(x => new { x.RestaurantId, x.PostingDate });
+        });
+
+        modelBuilder.Entity<JournalLine>(b =>
+        {
+            b.ToTable("journal_lines");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.DebitAmount).HasPrecision(18, 2);
+            b.Property(x => x.CreditAmount).HasPrecision(18, 2);
+            b.Property(x => x.LineDescription).HasMaxLength(250);
+            b.HasOne(x => x.Account).WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<JournalEntry>().WithMany(j => j.Lines).HasForeignKey(x => x.JournalEntryId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.JournalEntryId, x.AccountId });
+        });
+
+        modelBuilder.Entity<CashRegisterSession>(b =>
+        {
+            b.ToTable("cash_register_sessions");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.OpeningFloat).HasPrecision(18, 2);
+            b.Property(x => x.CashSales).HasPrecision(18, 2);
+            b.Property(x => x.CashDrops).HasPrecision(18, 2);
+            b.Property(x => x.ExpectedCash).HasPrecision(18, 2);
+            b.Property(x => x.ActualCountedCash).HasPrecision(18, 2);
+            b.Property(x => x.Discrepancy).HasPrecision(18, 2);
+            b.Property(x => x.Notes).HasMaxLength(500);
+            b.HasOne(x => x.CashierUser).WithMany().HasForeignKey(x => x.CashierUserId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.RestaurantId, x.BranchId, x.OpenedAt });
+        });
+
         // GLOBAL MULTI-TENANCY QUERY FILTERS
         modelBuilder.Entity<Branch>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<User>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
@@ -482,6 +540,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<StockMovement>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<PurchaseOrder>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<PurchaseOrderItem>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+
+        modelBuilder.Entity<Account>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<JournalEntry>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<JournalLine>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<CashRegisterSession>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
