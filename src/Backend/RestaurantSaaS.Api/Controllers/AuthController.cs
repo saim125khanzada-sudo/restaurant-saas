@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantSaaS.Application.DTOs;
@@ -101,5 +101,13 @@ public class AuthController : ControllerBase
             return BadRequest(new { error = result.Error });
 
         return Ok(new { message = "Two-factor authentication successfully verified and enabled." });
+    }
+
+    [HttpPost("seed-demo")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SeedDemoTenant()
+    {
+        var result = await _mediator.Send(new SeedDemoTenantCommand());
+        return Ok(result);
     }
 }

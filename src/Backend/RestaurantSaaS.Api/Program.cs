@@ -96,7 +96,18 @@ builder.Services.AddAuthorization(options =>
     }
 });
 
-// 6. Controllers & Swagger with JWT Bearer
+// 6. Controllers, CORS & Swagger with JWT Bearer
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -140,6 +151,7 @@ app.UseSwaggerUI(c =>
 // Redirect root / to /swagger
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
+app.UseCors("AllowFrontend");
 app.UseMiddleware<RestaurantSaaS.Api.Middleware.SecurityHeadersMiddleware>();
 app.UseAuthentication();
 app.UseMiddleware<TenantResolutionMiddleware>();

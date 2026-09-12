@@ -1,0 +1,398 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Urban Gourmet Bistro - Cashier POS & Live Kitchen Screen</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    body { background-color: #0f172a; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .pos-navbar { background: #1e293b; border-bottom: 1px solid #334155; }
+    .category-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 12px; font-weight: 600; padding: 10px 18px; margin-right: 8px; transition: all 0.2s; }
+    .category-btn.active, .category-btn:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+    .dish-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
+    .dish-card:hover { transform: translateY(-3px); border-color: #3b82f6; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3); }
+    .dish-img { height: 140px; object-fit: cover; width: 100%; }
+    .cart-panel { background: #1e293b; border-left: 1px solid #334155; height: calc(100vh - 65px); display: flex; flex-direction: column; }
+    .cart-items-scroll { flex: 1; overflow-y: auto; }
+    .cart-item { background: #0f172a; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #334155; }
+    .table-pill { background: #334155; color: #e2e8f0; border-radius: 8px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer; margin: 4px; display: inline-block; }
+    .table-pill.active { background: #10b981; color: #fff; font-weight: bold; }
+    .btn-qty { width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
+    .badge-fbr { background: #8b5cf6; color: #fff; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <nav class="navbar pos-navbar px-3 py-2">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        <span class="fs-4 fw-bold text-primary"><i class="bi bi-shop"></i> Urban Bistro POS</span>
+        <span class="badge bg-success"><i class="bi bi-shield-check"></i> Multi-Tenant (DT-01)</span>
+        <span class="badge badge-fbr"><i class="bi bi-qr-code-scan"></i> FBR Tier-1 Certified</span>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <button id="btnSeed" class="btn btn-outline-warning btn-sm" onclick="seedDemoData()"><i class="bi bi-lightning-charge-fill"></i> Reset / Seed Demo Data</button>
+        <span class="text-secondary small">API: <strong id="apiStatus" class="text-info">Checking...</strong></span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Left Column: Menu Categories & Product Grid -->
+      <div class="col-lg-8 col-xl-8 p-3" style="height: calc(100vh - 65px); overflow-y: auto;">
+        
+        <!-- Dine-in Table Selector -->
+        <div class="mb-3 p-3 bg-dark rounded-3 border border-secondary border-opacity-25">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-secondary small fw-bold text-uppercase"><i class="bi bi-grid-3x3-gap"></i> Select Dining Table</span>
+            <span id="selectedTableLabel" class="badge bg-primary">Dine-In: T-01</span>
+          </div>
+          <div id="tableList" class="d-flex flex-wrap"></div>
+        </div>
+
+        <!-- Category Tabs -->
+        <div id="categoryTabs" class="d-flex mb-3 overflow-x-auto pb-1">
+          <button class="category-btn active" onclick="filterCategory('ALL')">All Dishes</button>
+        </div>
+
+        <!-- Product Cards Grid -->
+        <div id="productGrid" class="row g-3"></div>
+      </div>
+
+      <!-- Right Column: Cart & Cash Register Checkout -->
+      <div class="col-lg-4 col-xl-4 p-0">
+        <div class="cart-panel p-3">
+          
+          <div class="d-flex justify-content-between align-items-center pb-2 border-bottom border-secondary mb-2">
+            <h5 class="m-0 fw-bold"><i class="bi bi-receipt"></i> Current Order</h5>
+            <button class="btn btn-sm btn-outline-danger" onclick="clearCart()"><i class="bi bi-trash"></i> Clear</button>
+          </div>
+
+          <!-- Order Type selector -->
+          <div class="btn-group w-100 mb-3" role="group">
+            <input type="radio" class="btn-check" name="orderType" id="typeDineIn" checked onchange="setOrderType('DineIn')">
+            <label class="btn btn-outline-primary btn-sm" for="typeDineIn"><i class="bi bi-cup-hot"></i> Dine-In</label>
+
+            <input type="radio" class="btn-check" name="orderType" id="typeTakeaway" onchange="setOrderType('Takeaway')">
+            <label class="btn btn-outline-primary btn-sm" for="typeTakeaway"><i class="bi bi-bag"></i> Takeaway</label>
+
+            <input type="radio" class="btn-check" name="orderType" id="typeDelivery" onchange="setOrderType('Delivery')">
+            <label class="btn btn-outline-primary btn-sm" for="typeDelivery"><i class="bi bi-bicycle"></i> Delivery</label>
+          </div>
+
+          <!-- Cart Items Scroll Area -->
+          <div id="cartItems" class="cart-items-scroll">
+            <div class="text-center text-secondary py-5">
+              <i class="bi bi-cart3 fs-1 d-block mb-2"></i>
+              <span>Your cart is empty. Click dishes to add.</span>
+            </div>
+          </div>
+
+          <!-- Totals Calculation -->
+          <div class="border-top border-secondary pt-3 mt-2">
+            <div class="d-flex justify-content-between text-secondary mb-1">
+              <span>Subtotal:</span>
+              <span id="lblSubtotal">PKR 0.00</span>
+            </div>
+            <div class="d-flex justify-content-between text-secondary mb-1">
+              <span id="lblTaxRate">Sales Tax (Card 5% / Cash 15%):</span>
+              <span id="lblTax">PKR 0.00</span>
+            </div>
+            <div class="d-flex justify-content-between fs-4 fw-bold text-white my-2">
+              <span>Payable:</span>
+              <span id="lblTotal" class="text-success">PKR 0.00</span>
+            </div>
+
+            <!-- Payment Action Buttons -->
+            <div class="row g-2 pt-2">
+              <div class="col-6">
+                <button class="btn btn-warning w-100 py-2 fw-bold text-dark" onclick="processCheckout('Cash')">
+                  <i class="bi bi-cash-stack"></i> Pay Cash
+                </button>
+              </div>
+              <div class="col-6">
+                <button class="btn btn-success w-100 py-2 fw-bold" onclick="processCheckout('Card')">
+                  <i class="bi bi-credit-card"></i> Pay Card (5% Tax)
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt / FBR Fiscal Modal -->
+  <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title"><i class="bi bi-check-circle-fill text-success"></i> Payment Approved & Fiscalized</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center p-4">
+          <div class="bg-black p-3 rounded-3 text-start font-monospace small mb-3 border border-secondary">
+            <div class="text-center fw-bold fs-6 mb-1">THE URBAN GOURMET BISTRO</div>
+            <div class="text-center text-secondary mb-2">Clifton Flagship, Karachi</div>
+            <hr class="border-secondary my-1"/>
+            <div id="receiptDetails"></div>
+            <hr class="border-secondary my-1"/>
+            <div class="d-flex justify-content-between fw-bold text-success fs-5">
+              <span>TOTAL PAID:</span>
+              <span id="rcptTotal"></span>
+            </div>
+            <hr class="border-secondary my-2"/>
+            <div class="text-center">
+              <span class="badge bg-purple px-2 py-1 mb-1" style="background:#7c3aed;">FBR VERIFIED INVOICE</span>
+              <div id="rcptFbrCode" class="text-warning small fw-bold"></div>
+              <div id="rcptQrData" class="text-secondary" style="font-size:0.65rem; word-break: break-all;"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary w-100" data-bs-dismiss="modal"><i class="bi bi-printer"></i> Print Receipt & New Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const API_BASE = "http://localhost:5000/api/v1";
+    let catalog = [];
+    let cart = [];
+    let selectedTable = "T-01";
+    let currentOrderType = "DineIn";
+    let paymentMethodSelected = "Card";
+
+    // Fallback menu data so the client works immediately even if API is starting
+    const defaultCatalog = [
+      { id: "1", name: "Smoky Angus Beef Burger", category: "Burgers", price: 1450, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400", desc: "Prime Angus, smoked gouda, brioche" },
+      { id: "2", name: "Crispy Chicken Burger", category: "Burgers", price: 1150, img: "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=400", desc: "Spiced chicken thigh, chipotle slaw" },
+      { id: "3", name: "Truffle Margherita Pizza 12\"", category: "Pizzas", price: 1850, img: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400", desc: "Buffalo mozzarella, white truffle drizzle" },
+      { id: "4", name: "Spicy Pepperoni & Jalapeno", category: "Pizzas", price: 2100, img: "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=400", desc: "Double beef pepperoni, hot honey" },
+      { id: "5", name: "Mint Lemonade Fizz", category: "Drinks", price: 450, img: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400", desc: "Fresh mint, zesty lemon, crushed ice" },
+      { id: "6", name: "Belgian Chocolate Shake", category: "Drinks", price: 650, img: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400", desc: "Dark cocoa, gelato, whipped cream" }
+    ];
+
+    async function init() {
+      renderTables();
+      renderCatalog(defaultCatalog);
+      checkApiHealth();
+    }
+
+    async function checkApiHealth() {
+      try {
+        const res = await fetch("http://localhost:5000/health");
+        if (res.ok) {
+          document.getElementById("apiStatus").textContent = "Connected (Port 5000)";
+          document.getElementById("apiStatus").className = "text-success";
+        }
+      } catch (e) {
+        document.getElementById("apiStatus").textContent = "Backend Offline (Click Seed/Start)";
+        document.getElementById("apiStatus").className = "text-warning";
+      }
+    }
+
+    async function seedDemoData() {
+      try {
+        const res = await fetch(${API_BASE}/auth/seed-demo, { method: "POST" });
+        if (res.ok) {
+          const data = await res.json();
+          alert(Successfully seeded demo tenant: ""!\n dishes and  tables ready.);
+          checkApiHealth();
+        } else {
+          alert("Make sure the backend API is running on http://localhost:5000");
+        }
+      } catch (e) {
+        alert("Connecting to backend on http://localhost:5000...");
+      }
+    }
+
+    function renderTables() {
+      const container = document.getElementById("tableList");
+      container.innerHTML = "";
+      for (let i = 1; i <= 8; i++) {
+        const tName = T-;
+        const pill = document.createElement("span");
+        pill.className = 	able-pill ;
+        pill.innerHTML = <i class="bi bi-circle-fill text-success me-1" style="font-size:0.5rem;"></i>;
+        pill.onclick = () => {
+          selectedTable = tName;
+          document.getElementById("selectedTableLabel").textContent = Dine-In: ;
+          renderTables();
+        };
+        container.appendChild(pill);
+      }
+    }
+
+    function renderCatalog(items) {
+      const grid = document.getElementById("productGrid");
+      grid.innerHTML = "";
+      items.forEach(dish => {
+        const col = document.createElement("div");
+        col.className = "col-md-6 col-xl-4";
+        col.innerHTML = 
+          <div class="dish-card h-100" onclick="addToCart('', '', )">
+            <img src="" class="dish-img" alt="" />
+            <div class="p-3">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <h6 class="fw-bold mb-0 text-white"></h6>
+              </div>
+              <p class="text-secondary small mb-2" style="font-size:0.75rem;"></p>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-primary fw-bold">PKR </span>
+                <button class="btn btn-sm btn-primary rounded-circle"><i class="bi bi-plus"></i></button>
+              </div>
+            </div>
+          </div>
+        ;
+        grid.appendChild(col);
+      });
+    }
+
+    function addToCart(id, name, price) {
+      const existing = cart.find(x => x.id === id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ id, name, price, qty: 1 });
+      }
+      updateCartUI();
+    }
+
+    function changeQty(id, delta) {
+      const item = cart.find(x => x.id === id);
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) {
+        cart = cart.filter(x => x.id !== id);
+      }
+      updateCartUI();
+    }
+
+    function clearCart() {
+      cart = [];
+      updateCartUI();
+    }
+
+    function setOrderType(type) {
+      currentOrderType = type;
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const container = document.getElementById("cartItems");
+      if (cart.length === 0) {
+        container.innerHTML = 
+          <div class="text-center text-secondary py-5">
+            <i class="bi bi-cart3 fs-1 d-block mb-2"></i>
+            <span>Your cart is empty. Click dishes to add.</span>
+          </div>;
+        document.getElementById("lblSubtotal").textContent = "PKR 0.00";
+        document.getElementById("lblTax").textContent = "PKR 0.00";
+        document.getElementById("lblTotal").textContent = "PKR 0.00";
+        return;
+      }
+
+      container.innerHTML = "";
+      let subtotal = 0;
+
+      cart.forEach(item => {
+        const itemTotal = item.price * item.qty;
+        subtotal += itemTotal;
+        const div = document.createElement("div");
+        div.className = "cart-item";
+        div.innerHTML = 
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-bold text-white small"></div>
+              <div class="text-secondary small">PKR  x </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-sm btn-outline-secondary btn-qty" onclick="changeQty('', -1)">-</button>
+              <span class="fw-bold"></span>
+              <button class="btn btn-sm btn-outline-primary btn-qty" onclick="changeQty('', 1)">+</button>
+              <span class="fw-bold text-primary small ms-2">PKR </span>
+            </div>
+          </div>
+        ;
+        container.appendChild(div);
+      });
+
+      // Differential tax calculation (Card 5% vs Cash 15%)
+      const taxRate = (paymentMethodSelected === "Card") ? 0.05 : 0.15;
+      const taxAmount = subtotal * taxRate;
+      const total = subtotal + taxAmount;
+
+      document.getElementById("lblSubtotal").textContent = PKR ;
+      document.getElementById("lblTaxRate").textContent = Tax (% ):;
+      document.getElementById("lblTax").textContent = PKR ;
+      document.getElementById("lblTotal").textContent = PKR ;
+    }
+
+    function processCheckout(method) {
+      if (cart.length === 0) {
+        alert("Please add items to cart before checkout.");
+        return;
+      }
+      paymentMethodSelected = method;
+      updateCartUI();
+
+      const subtotal = cart.reduce((acc, x) => acc + (x.price * x.qty), 0);
+      const taxRate = method === "Card" ? 0.05 : 0.15;
+      const taxAmount = subtotal * taxRate;
+      const total = subtotal + taxAmount;
+
+      const posReg = "POS-DT01";
+      const fbrInvoice = POS-DT01--;
+
+      let itemsHtml = cart.map(i => 
+        <div class="d-flex justify-content-between">
+          <span>x </span>
+          <span>PKR </span>
+        </div>
+      ).join("");
+
+      document.getElementById("receiptDetails").innerHTML = 
+        <div class="d-flex justify-content-between text-secondary">
+          <span>Date: </span>
+          <span>Time: </span>
+        </div>
+        <div class="d-flex justify-content-between text-secondary mb-2">
+          <span>Order Type: </span>
+          <span>Table: </span>
+        </div>
+        <div class="d-flex justify-content-between text-secondary mb-2">
+          <span>Method: <strong></strong></span>
+          <span>POS Reg: </span>
+        </div>
+        <hr class="border-secondary my-1"/>
+        
+        <hr class="border-secondary my-1"/>
+        <div class="d-flex justify-content-between">
+          <span>Subtotal:</span>
+          <span>PKR </span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Sales Tax (%):</span>
+          <span>PKR </span>
+        </div>
+      ;
+
+      document.getElementById("rcptTotal").textContent = PKR ;
+      document.getElementById("rcptFbrCode").textContent = FBR Invoice #: ;
+      document.getElementById("rcptQrData").textContent = FBR:INVOICE=|TOTAL=|TAX=|STATUS=VERIFIED;
+
+      const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
+      modal.show();
+      clearCart();
+    }
+
+    init();
+  </script>
+</body>
+</html>
