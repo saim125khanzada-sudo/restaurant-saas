@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using RestaurantSaaS.Application.Interfaces;
 using RestaurantSaaS.Domain.Entities;
 using RestaurantSaaS.SharedKernel.Common;
@@ -42,6 +42,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<OrderItemAddon> OrderItemAddons => Set<OrderItemAddon>();
     public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
     public DbSet<Payment> Payments => Set<Payment>();
+
+    // Phase 5: Delivery & Rider Management
+    public DbSet<DeliveryDispatch> DeliveryDispatches => Set<DeliveryDispatch>();
+    public DbSet<RiderLocationHistory> RiderLocationHistories => Set<RiderLocationHistory>();
+    public DbSet<RiderCashReconciliation> RiderCashReconciliations => Set<RiderCashReconciliation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -310,6 +315,51 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Phase 5: Delivery & Rider Mapping
+        modelBuilder.Entity<DeliveryDispatch>(b =>
+        {
+            b.ToTable("delivery_dispatches");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.DeliveryAddress).HasMaxLength(500).IsRequired();
+            b.Property(x => x.CustomerPhone).HasMaxLength(30);
+            b.Property(x => x.CustomerName).HasMaxLength(150);
+            b.Property(x => x.DestinationLatitude).HasPrecision(10, 7);
+            b.Property(x => x.DestinationLongitude).HasPrecision(10, 7);
+            b.Property(x => x.CashToCollect).HasPrecision(18, 2);
+            b.Property(x => x.CashCollected).HasPrecision(18, 2);
+            b.Property(x => x.FailureReason).HasMaxLength(250);
+            b.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.Rider).WithMany().HasForeignKey(x => x.RiderId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.RestaurantId, x.BranchId, x.Status });
+            b.HasIndex(x => new { x.RiderId, x.Status });
+        });
+
+        modelBuilder.Entity<RiderLocationHistory>(b =>
+        {
+            b.ToTable("rider_location_history");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Latitude).HasPrecision(10, 7).IsRequired();
+            b.Property(x => x.Longitude).HasPrecision(10, 7).IsRequired();
+            b.Property(x => x.Heading).HasPrecision(5, 2);
+            b.Property(x => x.SpeedKmh).HasPrecision(6, 2);
+            b.HasIndex(x => new { x.RiderId, x.RecordedAt });
+            b.HasIndex(x => new { x.RestaurantId, x.RecordedAt });
+        });
+
+        modelBuilder.Entity<RiderCashReconciliation>(b =>
+        {
+            b.ToTable("rider_cash_reconciliations");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.TotalCashExpected).HasPrecision(18, 2);
+            b.Property(x => x.TotalCashSubmitted).HasPrecision(18, 2);
+            b.Property(x => x.DiscrepancyAmount).HasPrecision(18, 2);
+            b.Property(x => x.Notes).HasMaxLength(500);
+            b.HasOne(x => x.Rider).WithMany().HasForeignKey(x => x.RiderId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.ApprovedByUser).WithMany().HasForeignKey(x => x.ApprovedByUserId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.RestaurantId, x.BranchId, x.ShiftDate });
+            b.HasIndex(x => new { x.RiderId, x.ShiftDate });
+        });
+
         // GLOBAL MULTI-TENANCY QUERY FILTERS
         modelBuilder.Entity<Branch>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<User>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
@@ -332,6 +382,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<OrderItemAddon>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<OrderStatusHistory>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<Payment>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+
+        modelBuilder.Entity<DeliveryDispatch>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<RiderLocationHistory>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<RiderCashReconciliation>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

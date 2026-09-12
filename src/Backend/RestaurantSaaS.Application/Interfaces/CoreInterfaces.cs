@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using RestaurantSaaS.Domain.Entities;
 
 namespace RestaurantSaaS.Application.Interfaces;
@@ -30,6 +30,11 @@ public interface IApplicationDbContext
     DbSet<OrderItemAddon> OrderItemAddons { get; }
     DbSet<OrderStatusHistory> OrderStatusHistories { get; }
     DbSet<Payment> Payments { get; }
+
+    // Phase 5: Delivery & Rider Management
+    DbSet<DeliveryDispatch> DeliveryDispatches { get; }
+    DbSet<RiderLocationHistory> RiderLocationHistories { get; }
+    DbSet<RiderCashReconciliation> RiderCashReconciliations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

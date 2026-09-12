@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -143,6 +143,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<RestaurantSaaS.Infrastructure.Hubs.OrderHub>("/hubs/orders");
+app.MapHub<RestaurantSaaS.Infrastructure.Hubs.DeliveryHub>("/hubs/delivery");
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTimeOffset.UtcNow }));
 
 app.Run();
