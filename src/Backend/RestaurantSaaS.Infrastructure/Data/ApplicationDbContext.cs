@@ -27,6 +27,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<DeviceSession> DeviceSessions => Set<DeviceSession>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    // Phase 2: Catalog & Facilities
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
+    public DbSet<Addon> Addons => Set<Addon>();
+    public DbSet<ProductAddon> ProductAddons => Set<ProductAddon>();
+    public DbSet<FloorSection> FloorSections => Set<FloorSection>();
+    public DbSet<RestaurantTable> RestaurantTables => Set<RestaurantTable>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -119,9 +128,104 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             b.HasIndex(a => new { a.RestaurantId, a.CreatedAt });
         });
 
+        // Phase 2: Categories
+        modelBuilder.Entity<Category>(b =>
+        {
+            b.ToTable("categories");
+            b.HasKey(c => c.Id);
+            b.HasIndex(c => new { c.RestaurantId, c.DisplayOrder });
+            b.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            b.HasOne(c => c.ParentCategory)
+                .WithMany(c => c.SubCategories)
+                .HasForeignKey(c => c.ParentCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Phase 2: Products
+        modelBuilder.Entity<Product>(b =>
+        {
+            b.ToTable("products");
+            b.HasKey(p => p.Id);
+            b.HasIndex(p => new { p.RestaurantId, p.SKU }).IsUnique();
+            b.HasIndex(p => new { p.RestaurantId, p.CategoryId, p.IsAvailable });
+            b.Property(p => p.Name).HasMaxLength(150).IsRequired();
+            b.Property(p => p.SKU).HasMaxLength(50).IsRequired();
+            b.Property(p => p.BasePrice).HasPrecision(18, 2);
+            b.Property(p => p.CostPrice).HasPrecision(18, 2);
+            b.HasOne(p => p.Category)
+                .WithMany(c => c.Products)
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Phase 2: Product Variants
+        modelBuilder.Entity<ProductVariant>(b =>
+        {
+            b.ToTable("product_variants");
+            b.HasKey(v => v.Id);
+            b.Property(v => v.Name).HasMaxLength(100).IsRequired();
+            b.Property(v => v.Price).HasPrecision(18, 2);
+            b.Property(v => v.CostPrice).HasPrecision(18, 2);
+            b.HasOne(v => v.Product)
+                .WithMany(p => p.Variants)
+                .HasForeignKey(v => v.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Phase 2: Addons & ProductAddons
+        modelBuilder.Entity<Addon>(b =>
+        {
+            b.ToTable("addons");
+            b.HasKey(a => a.Id);
+            b.Property(a => a.Name).HasMaxLength(100).IsRequired();
+            b.Property(a => a.Price).HasPrecision(18, 2);
+            b.Property(a => a.CostPrice).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<ProductAddon>(b =>
+        {
+            b.ToTable("product_addons");
+            b.HasKey(pa => pa.Id);
+            b.HasIndex(pa => new { pa.ProductId, pa.AddonId }).IsUnique();
+            b.HasOne(pa => pa.Product)
+                .WithMany(p => p.ProductAddons)
+                .HasForeignKey(pa => pa.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(pa => pa.Addon)
+                .WithMany(a => a.ProductAddons)
+                .HasForeignKey(pa => pa.AddonId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Phase 2: FloorSections & Tables
+        modelBuilder.Entity<FloorSection>(b =>
+        {
+            b.ToTable("floor_sections");
+            b.HasKey(fs => fs.Id);
+            b.Property(fs => fs.Name).HasMaxLength(100).IsRequired();
+            b.HasOne(fs => fs.Branch)
+                .WithMany()
+                .HasForeignKey(fs => fs.BranchId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RestaurantTable>(b =>
+        {
+            b.ToTable("restaurant_tables");
+            b.HasKey(t => t.Id);
+            b.HasIndex(t => new { t.RestaurantId, t.BranchId, t.TableNumber }).IsUnique();
+            b.Property(t => t.TableNumber).HasMaxLength(50).IsRequired();
+            b.HasOne(t => t.Branch)
+                .WithMany()
+                .HasForeignKey(t => t.BranchId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(t => t.FloorSection)
+                .WithMany(fs => fs.Tables)
+                .HasForeignKey(t => t.FloorSectionId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
         // GLOBAL MULTI-TENANCY QUERY FILTERS
-        // When authenticated as a tenant user, EF Core automatically appends WHERE RestaurantId = @CurrentTenant
-        // When user is SuperAdmin or TenantId is null, filter is bypassed.
         modelBuilder.Entity<Branch>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<User>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<Role>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
@@ -129,6 +233,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<RolePermission>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<DeviceSession>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<AuditLog>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+
+        // Catalog & Tables Filters
+        modelBuilder.Entity<Category>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<Product>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<ProductVariant>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<Addon>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<ProductAddon>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<FloorSection>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<RestaurantTable>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -150,7 +263,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             }
         }
 
-        // Automatic RestaurantId injection for added multi-tenant entities if not already specified
         foreach (var entry in ChangeTracker.Entries<IMultiTenantEntity>())
         {
             if (entry.State == EntityState.Added && entry.Entity.RestaurantId == Guid.Empty && _tenantService.RestaurantId.HasValue)

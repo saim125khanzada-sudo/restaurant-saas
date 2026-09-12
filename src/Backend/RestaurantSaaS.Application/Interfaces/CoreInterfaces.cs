@@ -15,6 +15,15 @@ public interface IApplicationDbContext
     DbSet<DeviceSession> DeviceSessions { get; }
     DbSet<AuditLog> AuditLogs { get; }
 
+    // Catalog & Table Management
+    DbSet<Category> Categories { get; }
+    DbSet<Product> Products { get; }
+    DbSet<ProductVariant> ProductVariants { get; }
+    DbSet<Addon> Addons { get; }
+    DbSet<ProductAddon> ProductAddons { get; }
+    DbSet<FloorSection> FloorSections { get; }
+    DbSet<RestaurantTable> RestaurantTables { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 
