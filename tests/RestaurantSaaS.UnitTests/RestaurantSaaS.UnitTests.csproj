@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
@@ -14,9 +15,12 @@
     </PackageReference>
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Backend\RestaurantSaaS.Domain\RestaurantSaaS.Domain.csproj" />
     <ProjectReference Include="..\..\src\Backend\RestaurantSaaS.Application\RestaurantSaaS.Application.csproj" />
+    <ProjectReference Include="..\..\src\Backend\RestaurantSaaS.Infrastructure\RestaurantSaaS.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
