@@ -29,6 +29,8 @@ builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<IMfaService, MfaService>();
 builder.Services.AddScoped<RestaurantSaaS.Application.Interfaces.IOrderNotificationService, RestaurantSaaS.Infrastructure.Services.OrderNotificationService>();
+builder.Services.AddScoped<RestaurantSaaS.Application.Taxation.Services.ITaxCalculationService, RestaurantSaaS.Application.Taxation.Services.TaxCalculationService>();
+builder.Services.AddScoped<RestaurantSaaS.Application.Taxation.Services.IFbrFiscalService, RestaurantSaaS.Application.Taxation.Services.FbrFiscalService>();
 builder.Services.AddSignalR();
 
 // 3. MediatR & FluentValidation

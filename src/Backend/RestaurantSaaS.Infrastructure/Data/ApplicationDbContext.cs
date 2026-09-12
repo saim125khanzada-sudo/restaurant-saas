@@ -70,6 +70,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<PayrollDetail> PayrollDetails => Set<PayrollDetail>();
 
+    // Phase 9: Taxation & Fiscalization
+    public DbSet<TaxRule> TaxRules => Set<TaxRule>();
+    public DbSet<FiscalInvoiceRecord> FiscalInvoiceRecords => Set<FiscalInvoiceRecord>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -580,6 +584,31 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             b.HasIndex(x => new { x.PayrollRunId, x.EmployeeId });
         });
 
+        // Phase 9: Taxation & Fiscalization Mapping
+        modelBuilder.Entity<TaxRule>(b =>
+        {
+            b.ToTable("tax_rules");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            b.Property(x => x.RatePercentage).HasPrecision(5, 2);
+            b.Property(x => x.Description).HasMaxLength(250);
+            b.HasIndex(x => new { x.RestaurantId, x.BranchId, x.IsActive });
+        });
+
+        modelBuilder.Entity<FiscalInvoiceRecord>(b =>
+        {
+            b.ToTable("fiscal_invoice_records");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.PosRegistrationNumber).HasMaxLength(50).IsRequired();
+            b.Property(x => x.FbrInvoiceNumber).HasMaxLength(100).IsRequired();
+            b.Property(x => x.QrCodeData).HasMaxLength(1000).IsRequired();
+            b.Property(x => x.TotalSalesValue).HasPrecision(18, 2);
+            b.Property(x => x.TotalTaxCharged).HasPrecision(18, 2);
+            b.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.RestaurantId, x.FbrInvoiceNumber }).IsUnique();
+            b.HasIndex(x => new { x.OrderId });
+        });
+
         // GLOBAL MULTI-TENANCY QUERY FILTERS
         modelBuilder.Entity<Branch>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<User>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
@@ -625,6 +654,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<StaffAdvance>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<PayrollRun>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
         modelBuilder.Entity<PayrollDetail>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+
+        modelBuilder.Entity<TaxRule>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
+        modelBuilder.Entity<FiscalInvoiceRecord>().HasQueryFilter(e => !_tenantService.RestaurantId.HasValue || e.RestaurantId == _tenantService.RestaurantId.Value);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

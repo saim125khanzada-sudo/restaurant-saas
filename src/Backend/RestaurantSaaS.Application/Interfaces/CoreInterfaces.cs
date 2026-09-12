@@ -58,6 +58,10 @@ public interface IApplicationDbContext
     DbSet<PayrollRun> PayrollRuns { get; }
     DbSet<PayrollDetail> PayrollDetails { get; }
 
+    // Phase 9: Taxation & Fiscalization
+    DbSet<TaxRule> TaxRules { get; }
+    DbSet<FiscalInvoiceRecord> FiscalInvoiceRecords { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 
