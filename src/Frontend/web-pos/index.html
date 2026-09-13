@@ -556,9 +556,12 @@
     <!-- TAB 7: INVENTORY & VENDORS -->
     <div class="tab-pane fade p-4" id="tab-inventory" role="tabpanel">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold"><i class="bi bi-boxes text-info"></i> Raw Ingredients & Recipe Depletion (BOM)</h4>
         <div>
-          <button class="btn btn-outline-light btn-sm me-2" onclick="openAddVendorModal()"><i class="bi bi-truck"></i> Add Vendor</button>
+          <h4 class="fw-bold m-0"><i class="bi bi-boxes text-info"></i> Raw Ingredients & Recipe Depletion (BOM)</h4>
+          <span class="text-secondary small">Real-time stock tracking, safety stock alert levels, and verified suppliers</span>
+        </div>
+        <div>
+          <button class="btn btn-outline-info btn-sm me-2" onclick="openAddIngredientModal()"><i class="bi bi-plus-circle"></i> Add Ingredient</button>
           <button class="btn btn-primary btn-sm" onclick="openStockAdjustmentModal()"><i class="bi bi-plus-slash-minus"></i> Stock Adjustment</button>
         </div>
       </div>
@@ -566,7 +569,10 @@
       <div class="row g-3">
         <div class="col-lg-8">
           <div class="metric-card">
-            <h5 class="fw-bold mb-3"><i class="bi bi-box-seam text-primary"></i> Stock Levels on Hand</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold m-0"><i class="bi bi-box-seam text-primary"></i> Stock Levels on Hand</h5>
+              <button class="btn btn-sm btn-outline-primary" onclick="openAddIngredientModal()"><i class="bi bi-plus-lg"></i> New Item</button>
+            </div>
             <div class="table-responsive">
               <table class="table table-dark table-hover align-middle">
                 <thead>
@@ -578,36 +584,11 @@
                     <th>Alert Level</th>
                     <th>Unit Cost</th>
                     <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="inventoryTableBody">
-                  <tr>
-                    <td><strong>Angus Beef Patties</strong></td>
-                    <td>Al-Madina Meat Suppliers</td>
-                    <td>KG</td>
-                    <td id="qty-beef">42.5 KG</td>
-                    <td>15.0 KG</td>
-                    <td>PKR 2,400/KG</td>
-                    <td><span class="badge bg-success">In Stock</span></td>
-                  </tr>
-                  <tr>
-                    <td><strong>Brioche Burger Buns</strong></td>
-                    <td>Artisan Bakers Co.</td>
-                    <td>Pieces</td>
-                    <td id="qty-buns">120 Pcs</td>
-                    <td>50 Pcs</td>
-                    <td>PKR 65/Pc</td>
-                    <td><span class="badge bg-success">In Stock</span></td>
-                  </tr>
-                  <tr>
-                    <td><strong>Mozzarella Cheese</strong></td>
-                    <td>Dairy Fresh Pakistan</td>
-                    <td>KG</td>
-                    <td id="qty-cheese">8.2 KG</td>
-                    <td>10.0 KG</td>
-                    <td>PKR 1,950/KG</td>
-                    <td><span class="badge bg-danger">Low Stock Alert</span></td>
-                  </tr>
+                  <!-- Dynamically rendered via renderInventoryTable() -->
                 </tbody>
               </table>
             </div>
@@ -616,29 +597,12 @@
 
         <div class="col-lg-4">
           <div class="metric-card">
-            <h5 class="fw-bold mb-3"><i class="bi bi-truck text-warning"></i> Registered Vendors</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold m-0"><i class="bi bi-truck text-warning"></i> Registered Vendors</h5>
+              <button class="btn btn-sm btn-outline-warning" onclick="openAddVendorModal()"><i class="bi bi-plus-lg"></i> Add Vendor</button>
+            </div>
             <ul class="list-group list-group-flush bg-transparent" id="vendorListGroup">
-              <li class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
-                <div>
-                  <strong>Al-Madina Meat Suppliers</strong><br/>
-                  <small class="text-secondary">Meat & Poultry | +92 300 1234567</small>
-                </div>
-                <span class="badge bg-success">Active</span>
-              </li>
-              <li class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
-                <div>
-                  <strong>Artisan Bakers Co.</strong><br/>
-                  <small class="text-secondary">Bakery & Buns | +92 321 7654321</small>
-                </div>
-                <span class="badge bg-success">Active</span>
-              </li>
-              <li class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
-                <div>
-                  <strong>Dairy Fresh Pakistan</strong><br/>
-                  <small class="text-secondary">Cheese & Milk | +92 333 9988776</small>
-                </div>
-                <span class="badge bg-success">Active</span>
-              </li>
+              <!-- Dynamically rendered via renderVendorsList() -->
             </ul>
           </div>
         </div>
@@ -752,15 +716,16 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD VENDOR -->
+  <!-- MODAL: ADD / EDIT VENDOR -->
   <div class="modal fade" id="vendorModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content bg-dark text-white border border-secondary">
         <div class="modal-header border-secondary">
-          <h5 class="modal-title"><i class="bi bi-truck text-warning"></i> Register New Vendor</h5>
+          <h5 class="modal-title" id="vendorModalTitle"><i class="bi bi-truck text-warning"></i> Register New Vendor</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
+          <input type="hidden" id="editVendorId" />
           <div class="mb-3">
             <label class="form-label">Vendor / Company Name</label>
             <input type="text" id="vName" class="form-control bg-black text-white border-secondary" placeholder="e.g. Al-Fatah Beverage Supplies" />
@@ -776,7 +741,62 @@
         </div>
         <div class="modal-footer border-secondary">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-warning text-dark" onclick="saveVendor()"><i class="bi bi-check-lg"></i> Register Vendor</button>
+          <button type="button" class="btn btn-warning text-dark" onclick="saveVendor()"><i class="bi bi-check-lg"></i> Save Vendor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT INGREDIENT -->
+  <div class="modal fade" id="ingredientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-white border border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title" id="ingredientModalTitle"><i class="bi bi-boxes text-info"></i> Add Raw Ingredient</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editIngId" />
+          <div class="mb-3">
+            <label class="form-label">Ingredient Name</label>
+            <input type="text" id="ingName" class="form-control bg-black text-white border-secondary" placeholder="e.g. Fresh Tomatoes" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Supplier / Vendor</label>
+            <select id="ingVendor" class="form-select bg-black text-white border-secondary">
+              <!-- Dynamically populated from vendors list -->
+            </select>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Unit of Measure</label>
+              <select id="ingUnit" class="form-select bg-black text-white border-secondary">
+                <option value="KG">Kilogram (KG)</option>
+                <option value="Pieces">Pieces (Pcs)</option>
+                <option value="Liters">Liters (L)</option>
+                <option value="Grams">Grams (g)</option>
+                <option value="Boxes">Boxes</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Current Stock Quantity</label>
+              <input type="number" step="0.1" id="ingQty" class="form-control bg-black text-white border-secondary" placeholder="e.g. 25.0" />
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Low Stock Alert Level</label>
+              <input type="number" step="0.1" id="ingAlert" class="form-control bg-black text-white border-secondary" placeholder="e.g. 10.0" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Cost per Unit (PKR)</label>
+              <input type="number" step="0.1" id="ingCost" class="form-control bg-black text-white border-secondary" placeholder="e.g. 150" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-info text-dark" onclick="saveIngredient()"><i class="bi bi-check-lg"></i> Save Ingredient</button>
         </div>
       </div>
     </div>
@@ -943,6 +963,18 @@
       { id: "6", name: "Belgian Chocolate Shake", category: "Drinks", price: 650, img: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400", desc: "Dark cocoa, gelato, whipped cream" }
     ];
 
+    let vendors = [
+      { id: "v1", name: "Al-Madina Meat Suppliers", category: "Meat & Poultry", phone: "+92 300 1234567" },
+      { id: "v2", name: "Artisan Bakers Co.", category: "Bakery & Buns", phone: "+92 321 7654321" },
+      { id: "v3", name: "Dairy Fresh Pakistan", category: "Cheese & Milk", phone: "+92 333 9988776" }
+    ];
+
+    let ingredients = [
+      { id: "ing1", name: "Angus Beef Patties", vendor: "Al-Madina Meat Suppliers", unit: "KG", qty: 42.5, alertLevel: 15.0, unitCost: 2400 },
+      { id: "ing2", name: "Brioche Burger Buns", vendor: "Artisan Bakers Co.", unit: "Pieces", qty: 120, alertLevel: 50, unitCost: 65 },
+      { id: "ing3", name: "Mozzarella Cheese", vendor: "Dairy Fresh Pakistan", unit: "KG", qty: 8.2, alertLevel: 10.0, unitCost: 1950 }
+    ];
+
     let cart = [];
     let selectedTable = "T-01";
     let currentOrderType = "DineIn";
@@ -953,6 +985,8 @@
       renderTables();
       renderCatalog(catalog);
       renderProductManagementTable();
+      renderInventoryTable();
+      renderVendorsList();
       checkApiHealth();
     }
 
@@ -1398,71 +1432,288 @@
       clearCart();
     }
 
-    // --- Vendors & Inventory Modals ---
+    // --- VENDORS MANAGEMENT (Add, Edit, Remove) ---
+    function renderVendorsList() {
+      const ul = document.getElementById("vendorListGroup");
+      if (!ul) return;
+      ul.innerHTML = "";
+
+      if (vendors.length === 0) {
+        ul.innerHTML = `<li class="list-group-item bg-transparent text-secondary text-center py-4">No registered vendors found.</li>`;
+        return;
+      }
+
+      vendors.forEach(v => {
+        const li = document.createElement("li");
+        li.className = "list-group-item bg-transparent text-white px-0 py-3 d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25";
+        li.innerHTML = `
+          <div>
+            <strong>${v.name}</strong><br/>
+            <small class="text-secondary">${v.category} | ${v.phone}</small>
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            <span class="badge bg-success me-1">Active</span>
+            <button class="btn btn-sm btn-outline-info py-0 px-2" title="Edit Vendor" onclick="openEditVendorModal('${v.id}')">
+              <i class="bi bi-pencil-fill"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger py-0 px-2" title="Remove Vendor" onclick="deleteVendor('${v.id}')">
+              <i class="bi bi-trash-fill"></i>
+            </button>
+          </div>
+        `;
+        ul.appendChild(li);
+      });
+
+      // Also update ingredient and adjustment vendor dropdowns
+      updateIngredientVendorDropdown();
+    }
+
     function openAddVendorModal() {
+      document.getElementById("vendorModalTitle").innerHTML = '<i class="bi bi-truck text-warning"></i> Register New Vendor';
+      document.getElementById("editVendorId").value = "";
       document.getElementById("vName").value = "";
       document.getElementById("vCategory").value = "";
       document.getElementById("vPhone").value = "";
       new bootstrap.Modal(document.getElementById('vendorModal')).show();
     }
 
+    function openEditVendorModal(id) {
+      const v = vendors.find(x => x.id === id);
+      if (!v) return;
+
+      document.getElementById("vendorModalTitle").innerHTML = '<i class="bi bi-pencil text-warning"></i> Edit Vendor Details';
+      document.getElementById("editVendorId").value = v.id;
+      document.getElementById("vName").value = v.name;
+      document.getElementById("vCategory").value = v.category;
+      document.getElementById("vPhone").value = v.phone;
+      new bootstrap.Modal(document.getElementById('vendorModal')).show();
+    }
+
     function saveVendor() {
+      const id = document.getElementById("editVendorId").value;
       const name = document.getElementById("vName").value.trim();
-      const cat = document.getElementById("vCategory").value.trim();
+      const category = document.getElementById("vCategory").value.trim();
       const phone = document.getElementById("vPhone").value.trim();
 
       if (!name) {
-        alert("Please enter vendor name");
+        alert("Please enter vendor company name.");
         return;
       }
 
-      const ul = document.getElementById("vendorListGroup");
-      const li = document.createElement("li");
-      li.className = "list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center";
-      li.innerHTML = `
-        <div>
-          <strong>${name}</strong><br/>
-          <small class="text-secondary">${cat} | ${phone}</small>
-        </div>
-        <span class="badge bg-success">Active</span>
-      `;
-      ul.appendChild(li);
+      if (id) {
+        const v = vendors.find(x => x.id === id);
+        if (v) {
+          const oldName = v.name;
+          v.name = name;
+          v.category = category;
+          v.phone = phone;
+          // Update associated ingredients vendor name
+          ingredients.forEach(ing => {
+            if (ing.vendor === oldName) ing.vendor = name;
+          });
+          renderInventoryTable();
+        }
+      } else {
+        const newId = "v" + Date.now();
+        vendors.push({ id: newId, name, category, phone });
+      }
 
       bootstrap.Modal.getInstance(document.getElementById('vendorModal')).hide();
-      alert(`Vendor "${name}" registered successfully!`);
+      renderVendorsList();
+      alert(`Vendor "${name}" saved successfully!`);
+    }
+
+    function deleteVendor(id) {
+      const v = vendors.find(x => x.id === id);
+      if (!v) return;
+
+      if (confirm(`Are you sure you want to remove vendor "${v.name}"?`)) {
+        vendors = vendors.filter(x => x.id !== id);
+        renderVendorsList();
+      }
+    }
+
+    function updateIngredientVendorDropdown() {
+      const select = document.getElementById("ingVendor");
+      if (!select) return;
+      select.innerHTML = "";
+      vendors.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.category})`;
+        select.appendChild(opt);
+      });
+      if (vendors.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "General Local Market";
+        opt.textContent = "General Local Market";
+        select.appendChild(opt);
+      }
+    }
+
+    // --- INVENTORY MANAGEMENT (Add, Edit, Remove, Stock Levels) ---
+    function renderInventoryTable() {
+      const tbody = document.getElementById("inventoryTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      if (ingredients.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-secondary py-4">No inventory ingredients found. Click "Add Ingredient" to create one.</td></tr>`;
+        return;
+      }
+
+      ingredients.forEach(item => {
+        const isLowStock = item.qty <= item.alertLevel;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${item.name}</strong></td>
+          <td><span class="text-info small">${item.vendor}</span></td>
+          <td><span class="badge bg-secondary">${item.unit}</span></td>
+          <td class="fw-bold fs-6 ${isLowStock ? 'text-danger' : 'text-success'}">${item.qty.toFixed(1)} ${item.unit}</td>
+          <td class="text-secondary small">${item.alertLevel.toFixed(1)} ${item.unit}</td>
+          <td>PKR ${item.unitCost.toLocaleString()}/${item.unit}</td>
+          <td>
+            ${isLowStock 
+              ? '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Low Stock Alert</span>' 
+              : '<span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> In Stock</span>'}
+          </td>
+          <td>
+            <div class="btn-group btn-group-sm" role="group">
+              <button class="btn btn-outline-info" title="Edit Ingredient" onclick="openEditIngredientModal('${item.id}')">
+                <i class="bi bi-pencil-fill"></i> Edit
+              </button>
+              <button class="btn btn-outline-danger" title="Remove Ingredient" onclick="deleteIngredient('${item.id}')">
+                <i class="bi bi-trash-fill"></i> Remove
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Also update stock adjustment select options
+      updateStockAdjustmentDropdown();
+    }
+
+    function openAddIngredientModal() {
+      document.getElementById("ingredientModalTitle").innerHTML = '<i class="bi bi-boxes text-info"></i> Add Raw Ingredient';
+      document.getElementById("editIngId").value = "";
+      document.getElementById("ingName").value = "";
+      document.getElementById("ingUnit").value = "KG";
+      document.getElementById("ingQty").value = "";
+      document.getElementById("ingAlert").value = "";
+      document.getElementById("ingCost").value = "";
+      updateIngredientVendorDropdown();
+      new bootstrap.Modal(document.getElementById('ingredientModal')).show();
+    }
+
+    function openEditIngredientModal(id) {
+      const item = ingredients.find(x => x.id === id);
+      if (!item) return;
+
+      document.getElementById("ingredientModalTitle").innerHTML = '<i class="bi bi-pencil text-warning"></i> Edit Raw Ingredient';
+      document.getElementById("editIngId").value = item.id;
+      document.getElementById("ingName").value = item.name;
+      document.getElementById("ingUnit").value = item.unit;
+      document.getElementById("ingQty").value = item.qty;
+      document.getElementById("ingAlert").value = item.alertLevel;
+      document.getElementById("ingCost").value = item.unitCost;
+      updateIngredientVendorDropdown();
+      if (document.getElementById("ingVendor")) {
+        document.getElementById("ingVendor").value = item.vendor;
+      }
+      new bootstrap.Modal(document.getElementById('ingredientModal')).show();
+    }
+
+    function saveIngredient() {
+      const id = document.getElementById("editIngId").value;
+      const name = document.getElementById("ingName").value.trim();
+      const vendor = document.getElementById("ingVendor").value;
+      const unit = document.getElementById("ingUnit").value;
+      const qty = parseFloat(document.getElementById("ingQty").value);
+      const alertLevel = parseFloat(document.getElementById("ingAlert").value);
+      const unitCost = parseFloat(document.getElementById("ingCost").value);
+
+      if (!name || isNaN(qty) || isNaN(alertLevel) || isNaN(unitCost)) {
+        alert("Please fill in all ingredient fields with valid numeric values for quantity, alert level, and cost.");
+        return;
+      }
+
+      if (id) {
+        const item = ingredients.find(x => x.id === id);
+        if (item) {
+          item.name = name;
+          item.vendor = vendor;
+          item.unit = unit;
+          item.qty = qty;
+          item.alertLevel = alertLevel;
+          item.unitCost = unitCost;
+        }
+      } else {
+        const newId = "ing" + Date.now();
+        ingredients.push({ id: newId, name, vendor, unit, qty, alertLevel, unitCost });
+      }
+
+      bootstrap.Modal.getInstance(document.getElementById('ingredientModal')).hide();
+      renderInventoryTable();
+      alert(`Ingredient "${name}" saved successfully!`);
+    }
+
+    function deleteIngredient(id) {
+      const item = ingredients.find(x => x.id === id);
+      if (!item) return;
+
+      if (confirm(`Are you sure you want to remove ingredient "${item.name}" from inventory?`)) {
+        ingredients = ingredients.filter(x => x.id !== id);
+        renderInventoryTable();
+      }
+    }
+
+    function updateStockAdjustmentDropdown() {
+      const select = document.getElementById("adjIngredient");
+      if (!select) return;
+      select.innerHTML = "";
+      ingredients.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item.id;
+        opt.textContent = `${item.name} (${item.qty} ${item.unit} in stock)`;
+        select.appendChild(opt);
+      });
     }
 
     function openStockAdjustmentModal() {
+      updateStockAdjustmentDropdown();
       document.getElementById("adjQty").value = "";
       new bootstrap.Modal(document.getElementById('stockModal')).show();
     }
 
     function saveStockAdjustment() {
-      const ing = document.getElementById("adjIngredient").value;
+      const ingId = document.getElementById("adjIngredient").value;
       const qty = parseFloat(document.getElementById("adjQty").value);
       const type = document.getElementById("adjType").value;
 
-      if (isNaN(qty)) {
-        alert("Please enter a valid quantity");
+      if (isNaN(qty) || qty <= 0) {
+        alert("Please enter a positive quantity to adjust.");
         return;
       }
 
-      if (ing === "beef") {
-        const el = document.getElementById("qty-beef");
-        const current = parseFloat(el.textContent);
-        el.textContent = `${(current + (type === 'waste' ? -qty : qty)).toFixed(1)} KG`;
-      } else if (ing === "buns") {
-        const el = document.getElementById("qty-buns");
-        const current = parseFloat(el.textContent);
-        el.textContent = `${Math.round(current + (type === 'waste' ? -qty : qty))} Pcs`;
-      } else if (ing === "cheese") {
-        const el = document.getElementById("qty-cheese");
-        const current = parseFloat(el.textContent);
-        el.textContent = `${(current + (type === 'waste' ? -qty : qty)).toFixed(1)} KG`;
+      const item = ingredients.find(x => x.id === ingId);
+      if (!item) {
+        alert("Please select an ingredient.");
+        return;
+      }
+
+      if (type === 'waste') {
+        item.qty = Math.max(0, item.qty - qty);
+      } else if (type === 'purchase') {
+        item.qty = item.qty + qty;
+      } else if (type === 'audit') {
+        item.qty = qty;
       }
 
       bootstrap.Modal.getInstance(document.getElementById('stockModal')).hide();
-      alert(`Stock adjustment of ${qty} applied!`);
+      renderInventoryTable();
+      alert(`Stock adjustment applied! New level for ${item.name}: ${item.qty.toFixed(1)} ${item.unit}`);
     }
 
     function showAddUserModal() {
