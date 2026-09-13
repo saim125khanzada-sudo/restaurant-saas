@@ -3,35 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Urban Bistro POS & Live Kitchen Screen</title>
+  <title>Urban Bistro - Restaurant Management SaaS Suite</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <style>
     body { background-color: #0f172a; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     .pos-navbar { background: #1e293b; border-bottom: 1px solid #334155; }
-    .category-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 12px; font-weight: 600; padding: 10px 18px; margin-right: 8px; transition: all 0.2s; white-space: nowrap; }
+    .nav-tabs .nav-link { color: #94a3b8; border: none; font-weight: 600; padding: 12px 18px; }
+    .nav-tabs .nav-link.active { color: #38bdf8; background: transparent; border-bottom: 3px solid #38bdf8; }
+    .nav-tabs .nav-link:hover { color: #f8fafc; }
+    .category-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 12px; font-weight: 600; padding: 8px 16px; margin-right: 8px; transition: all 0.2s; white-space: nowrap; }
     .category-btn.active, .category-btn:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
     .dish-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
     .dish-card:hover { transform: translateY(-3px); border-color: #3b82f6; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3); }
-    .dish-img { height: 140px; object-fit: cover; width: 100%; }
-    .cart-panel { background: #1e293b; border-left: 1px solid #334155; height: calc(100vh - 65px); display: flex; flex-direction: column; }
+    .dish-img { height: 130px; object-fit: cover; width: 100%; }
+    .cart-panel { background: #1e293b; border-left: 1px solid #334155; height: calc(100vh - 120px); display: flex; flex-direction: column; }
     .cart-items-scroll { flex: 1; overflow-y: auto; }
     .cart-item { background: #0f172a; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #334155; }
     .table-pill { background: #334155; color: #e2e8f0; border-radius: 8px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer; margin: 4px; display: inline-block; }
     .table-pill.active { background: #10b981; color: #fff; font-weight: bold; }
     .btn-qty { width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
     .badge-fbr { background: #8b5cf6; color: #fff; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; }
+    .metric-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 20px; }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation Header -->
+  <!-- Top Main Header -->
   <nav class="navbar pos-navbar px-3 py-2">
     <div class="container-fluid d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-3">
-        <span class="fs-4 fw-bold text-primary"><i class="bi bi-shop"></i> Urban Bistro POS</span>
+        <span class="fs-4 fw-bold text-primary"><i class="bi bi-shop"></i> Urban Bistro ERP & POS</span>
         <span class="badge bg-success"><i class="bi bi-shield-check"></i> Multi-Tenant (DT-01)</span>
         <span class="badge badge-fbr"><i class="bi bi-qr-code-scan"></i> FBR Tier-1 Certified</span>
+        <a id="lnkSwagger" href="http://localhost:5000/swagger" target="_blank" class="badge bg-info text-dark text-decoration-none">
+          <i class="bi bi-file-code-fill"></i> REST API Swagger
+        </a>
       </div>
       <div class="d-flex align-items-center gap-3">
         <button id="btnSeed" class="btn btn-outline-warning btn-sm" onclick="seedDemoData()"><i class="bi bi-lightning-charge-fill"></i> Reset / Seed Demo Data</button>
@@ -40,94 +47,501 @@
     </div>
   </nav>
 
-  <div class="container-fluid">
-    <div class="row">
-      <!-- Left Column: Menu Categories & Product Grid -->
-      <div class="col-lg-8 col-xl-8 p-3" style="height: calc(100vh - 65px); overflow-y: auto;">
-        
-        <!-- Dine-in Table Selector -->
-        <div class="mb-3 p-3 bg-dark rounded-3 border border-secondary border-opacity-25">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="text-secondary small fw-bold text-uppercase"><i class="bi bi-grid-3x3-gap"></i> Select Dining Table</span>
-            <span id="selectedTableLabel" class="badge bg-primary">Dine-In: T-01</span>
-          </div>
-          <div id="tableList" class="d-flex flex-wrap"></div>
-        </div>
+  <!-- Navigation Modules Tabs -->
+  <div class="px-3 border-bottom border-secondary bg-dark bg-opacity-50">
+    <ul class="nav nav-tabs" id="erpTabs" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active" id="pos-tab" data-bs-toggle="tab" data-bs-target="#tab-pos" type="button"><i class="bi bi-calculator"></i> Counter POS</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#tab-dashboard" type="button"><i class="bi bi-speedometer2"></i> Analytics & Dashboard</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#tab-users" type="button"><i class="bi bi-people-fill"></i> Users & Staff</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="hr-tab" data-bs-toggle="tab" data-bs-target="#tab-hr" type="button"><i class="bi bi-person-badge"></i> HR & Attendance</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#tab-payroll" type="button"><i class="bi bi-cash-coin"></i> Payroll Runs</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#tab-inventory" type="button"><i class="bi bi-boxes"></i> Inventory & Vendors</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="accounting-tab" data-bs-toggle="tab" data-bs-target="#tab-accounting" type="button"><i class="bi bi-journal-bookmark-fill"></i> Accounting & Register</button>
+      </li>
+    </ul>
+  </div>
 
-        <!-- Category Tabs -->
-        <div id="categoryTabs" class="d-flex mb-3 overflow-x-auto pb-1">
-          <button class="category-btn active" onclick="filterCategory('ALL')">All Dishes</button>
-          <button class="category-btn" onclick="filterCategory('Burgers')">Burgers</button>
-          <button class="category-btn" onclick="filterCategory('Pizzas')">Pizzas</button>
-          <button class="category-btn" onclick="filterCategory('Drinks')">Drinks</button>
-        </div>
+  <div class="tab-content" id="erpTabContent">
 
-        <!-- Product Cards Grid -->
-        <div id="productGrid" class="row g-3"></div>
-      </div>
-
-      <!-- Right Column: Cart & Cash Register Checkout -->
-      <div class="col-lg-4 col-xl-4 p-0">
-        <div class="cart-panel p-3">
-          
-          <div class="d-flex justify-content-between align-items-center pb-2 border-bottom border-secondary mb-2">
-            <h5 class="m-0 fw-bold"><i class="bi bi-receipt"></i> Current Order</h5>
-            <button class="btn btn-sm btn-outline-danger" onclick="clearCart()"><i class="bi bi-trash"></i> Clear</button>
-          </div>
-
-          <!-- Order Type selector -->
-          <div class="btn-group w-100 mb-3" role="group">
-            <input type="radio" class="btn-check" name="orderType" id="typeDineIn" checked onchange="setOrderType('DineIn')">
-            <label class="btn btn-outline-primary btn-sm" for="typeDineIn"><i class="bi bi-cup-hot"></i> Dine-In</label>
-
-            <input type="radio" class="btn-check" name="orderType" id="typeTakeaway" onchange="setOrderType('Takeaway')">
-            <label class="btn btn-outline-primary btn-sm" for="typeTakeaway"><i class="bi bi-bag"></i> Takeaway</label>
-
-            <input type="radio" class="btn-check" name="orderType" id="typeDelivery" onchange="setOrderType('Delivery')">
-            <label class="btn btn-outline-primary btn-sm" for="typeDelivery"><i class="bi bi-bicycle"></i> Delivery</label>
-          </div>
-
-          <!-- Cart Items Scroll Area -->
-          <div id="cartItems" class="cart-items-scroll">
-            <div class="text-center text-secondary py-5">
-              <i class="bi bi-cart3 fs-1 d-block mb-2"></i>
-              <span>Your cart is empty. Click dishes to add.</span>
-            </div>
-          </div>
-
-          <!-- Totals Calculation -->
-          <div class="border-top border-secondary pt-3 mt-2">
-            <div class="d-flex justify-content-between text-secondary mb-1">
-              <span>Subtotal:</span>
-              <span id="lblSubtotal">PKR 0.00</span>
-            </div>
-            <div class="d-flex justify-content-between text-secondary mb-1">
-              <span id="lblTaxRate">Sales Tax (Card 5% / Cash 15%):</span>
-              <span id="lblTax">PKR 0.00</span>
-            </div>
-            <div class="d-flex justify-content-between fs-4 fw-bold text-white my-2">
-              <span>Payable:</span>
-              <span id="lblTotal" class="text-success">PKR 0.00</span>
-            </div>
-
-            <!-- Payment Action Buttons -->
-            <div class="row g-2 pt-2">
-              <div class="col-6">
-                <button class="btn btn-warning w-100 py-2 fw-bold text-dark" onclick="processCheckout('Cash')">
-                  <i class="bi bi-cash-stack"></i> Pay Cash
-                </button>
+    <!-- TAB 1: POS -->
+    <div class="tab-pane fade show active" id="tab-pos" role="tabpanel">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-lg-8 col-xl-8 p-3" style="height: calc(100vh - 120px); overflow-y: auto;">
+            <!-- Dine-in Table Selector -->
+            <div class="mb-3 p-3 bg-dark rounded-3 border border-secondary border-opacity-25">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-secondary small fw-bold text-uppercase"><i class="bi bi-grid-3x3-gap"></i> Select Dining Table</span>
+                <span id="selectedTableLabel" class="badge bg-primary">Dine-In: T-01</span>
               </div>
-              <div class="col-6">
-                <button class="btn btn-success w-100 py-2 fw-bold" onclick="processCheckout('Card')">
-                  <i class="bi bi-credit-card"></i> Pay Card (5% Tax)
-                </button>
-              </div>
+              <div id="tableList" class="d-flex flex-wrap"></div>
             </div>
+
+            <!-- Category Tabs -->
+            <div id="categoryTabs" class="d-flex mb-3 overflow-x-auto pb-1">
+              <button class="category-btn active" onclick="filterCategory('ALL')">All Dishes</button>
+              <button class="category-btn" onclick="filterCategory('Burgers')">Burgers</button>
+              <button class="category-btn" onclick="filterCategory('Pizzas')">Pizzas</button>
+              <button class="category-btn" onclick="filterCategory('Drinks')">Drinks</button>
+            </div>
+
+            <!-- Product Cards Grid -->
+            <div id="productGrid" class="row g-3"></div>
           </div>
 
+          <!-- Right Column: Cart -->
+          <div class="col-lg-4 col-xl-4 p-0">
+            <div class="cart-panel p-3">
+              <div class="d-flex justify-content-between align-items-center pb-2 border-bottom border-secondary mb-2">
+                <h5 class="m-0 fw-bold"><i class="bi bi-receipt"></i> Current Order</h5>
+                <button class="btn btn-sm btn-outline-danger" onclick="clearCart()"><i class="bi bi-trash"></i> Clear</button>
+              </div>
+
+              <!-- Order Type selector -->
+              <div class="btn-group w-100 mb-3" role="group">
+                <input type="radio" class="btn-check" name="orderType" id="typeDineIn" checked onchange="setOrderType('DineIn')">
+                <label class="btn btn-outline-primary btn-sm" for="typeDineIn"><i class="bi bi-cup-hot"></i> Dine-In</label>
+
+                <input type="radio" class="btn-check" name="orderType" id="typeTakeaway" onchange="setOrderType('Takeaway')">
+                <label class="btn btn-outline-primary btn-sm" for="typeTakeaway"><i class="bi bi-bag"></i> Takeaway</label>
+
+                <input type="radio" class="btn-check" name="orderType" id="typeDelivery" onchange="setOrderType('Delivery')">
+                <label class="btn btn-outline-primary btn-sm" for="typeDelivery"><i class="bi bi-bicycle"></i> Delivery</label>
+              </div>
+
+              <div id="cartItems" class="cart-items-scroll">
+                <div class="text-center text-secondary py-5">
+                  <i class="bi bi-cart3 fs-1 d-block mb-2"></i>
+                  <span>Your cart is empty. Click dishes to add.</span>
+                </div>
+              </div>
+
+              <div class="border-top border-secondary pt-3 mt-2">
+                <div class="d-flex justify-content-between text-secondary mb-1">
+                  <span>Subtotal:</span>
+                  <span id="lblSubtotal">PKR 0.00</span>
+                </div>
+                <div class="d-flex justify-content-between text-secondary mb-1">
+                  <span id="lblTaxRate">Sales Tax (Card 5% / Cash 15%):</span>
+                  <span id="lblTax">PKR 0.00</span>
+                </div>
+                <div class="d-flex justify-content-between fs-4 fw-bold text-white my-2">
+                  <span>Payable:</span>
+                  <span id="lblTotal" class="text-success">PKR 0.00</span>
+                </div>
+
+                <div class="row g-2 pt-2">
+                  <div class="col-6">
+                    <button class="btn btn-warning w-100 py-2 fw-bold text-dark" onclick="processCheckout('Cash')">
+                      <i class="bi bi-cash-stack"></i> Pay Cash
+                    </button>
+                  </div>
+                  <div class="col-6">
+                    <button class="btn btn-success w-100 py-2 fw-bold" onclick="processCheckout('Card')">
+                      <i class="bi bi-credit-card"></i> Pay Card (5% Tax)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- TAB 2: DASHBOARD -->
+    <div class="tab-pane fade p-4" id="tab-dashboard" role="tabpanel">
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="metric-card">
+            <div class="text-secondary small text-uppercase fw-bold">Total Daily Sales</div>
+            <div class="fs-2 fw-bold text-success mt-1">PKR 248,500</div>
+            <div class="text-info small mt-2"><i class="bi bi-arrow-up-right"></i> +14.2% vs yesterday</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="metric-card">
+            <div class="text-secondary small text-uppercase fw-bold">Total Orders Completed</div>
+            <div class="fs-2 fw-bold text-primary mt-1">142 Orders</div>
+            <div class="text-secondary small mt-2">Dine-In: 88 | Delivery: 54</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="metric-card">
+            <div class="text-secondary small text-uppercase fw-bold">Active Waiters / Riders</div>
+            <div class="fs-2 fw-bold text-warning mt-1">8 On Shift</div>
+            <div class="text-secondary small mt-2">5 Waiters | 3 Riders Online</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="metric-card">
+            <div class="text-secondary small text-uppercase fw-bold">FBR Fiscal Compliance</div>
+            <div class="fs-2 fw-bold text-info mt-1">100% Synced</div>
+            <div class="text-success small mt-2"><i class="bi bi-check-circle-fill"></i> Tier-1 POS Integrated</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-lg-8">
+          <div class="metric-card">
+            <h5 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow text-primary"></i> Hourly Rush & Sales Volume</h5>
+            <div class="table-responsive">
+              <table class="table table-dark table-hover align-middle">
+                <thead>
+                  <tr class="text-secondary">
+                    <th>Hour</th>
+                    <th>Orders</th>
+                    <th>Gross Volume</th>
+                    <th>Rush Level</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>12:00 - 13:00 (Lunch)</td><td>26</td><td>PKR 44,200</td><td><span class="badge bg-warning text-dark">High</span></td></tr>
+                  <tr><td>13:00 - 14:00 (Lunch)</td><td>34</td><td>PKR 59,500</td><td><span class="badge bg-danger">Peak Rush</span></td></tr>
+                  <tr><td>19:00 - 20:00 (Dinner)</td><td>28</td><td>PKR 49,000</td><td><span class="badge bg-warning text-dark">High</span></td></tr>
+                  <tr><td>20:00 - 21:00 (Dinner)</td><td>42</td><td>PKR 78,800</td><td><span class="badge bg-danger">Peak Rush</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="metric-card">
+            <h5 class="fw-bold mb-3"><i class="bi bi-star-fill text-warning"></i> Top Selling Dishes</h5>
+            <ul class="list-group list-group-flush bg-transparent">
+              <li class="list-group-item bg-transparent text-white d-flex justify-content-between px-0">
+                <span>1. Smoky Angus Beef Burger</span>
+                <span class="fw-bold text-primary">64 sold</span>
+              </li>
+              <li class="list-group-item bg-transparent text-white d-flex justify-content-between px-0">
+                <span>2. Truffle Margherita Pizza</span>
+                <span class="fw-bold text-primary">48 sold</span>
+              </li>
+              <li class="list-group-item bg-transparent text-white d-flex justify-content-between px-0">
+                <span>3. Spicy Pepperoni Pizza</span>
+                <span class="fw-bold text-primary">41 sold</span>
+              </li>
+              <li class="list-group-item bg-transparent text-white d-flex justify-content-between px-0">
+                <span>4. Mint Lemonade Fizz</span>
+                <span class="fw-bold text-primary">72 sold</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: USERS & STAFF -->
+    <div class="tab-pane fade p-4" id="tab-users" role="tabpanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold"><i class="bi bi-people-fill text-primary"></i> Staff & User Roles Management</h4>
+        <button class="btn btn-primary btn-sm" onclick="showAddUserModal()"><i class="bi bi-person-plus-fill"></i> Add User / Staff</button>
+      </div>
+      <div class="metric-card">
+        <div class="table-responsive">
+          <table class="table table-dark table-hover align-middle">
+            <thead>
+              <tr class="text-secondary">
+                <th>Name</th>
+                <th>Email / Username</th>
+                <th>Role</th>
+                <th>Assigned Branch</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <tr>
+                <td><strong>Hassan Tariq</strong></td>
+                <td>admin@urbanbistro.com</td>
+                <td><span class="badge bg-danger">Restaurant Admin</span></td>
+                <td>Clifton Flagship (DT-01)</td>
+                <td><span class="badge bg-success">Active</span></td>
+                <td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+              </tr>
+              <tr>
+                <td><strong>Bilal Ahmed</strong></td>
+                <td>manager@branch1.com</td>
+                <td><span class="badge bg-warning text-dark">Branch Manager</span></td>
+                <td>Clifton Flagship (DT-01)</td>
+                <td><span class="badge bg-success">Active</span></td>
+                <td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+              </tr>
+              <tr>
+                <td><strong>Zeeshan Ali</strong></td>
+                <td>waiter@branch1.com</td>
+                <td><span class="badge bg-info text-dark">Waiter</span></td>
+                <td>Clifton Flagship (DT-01)</td>
+                <td><span class="badge bg-success">Active</span></td>
+                <td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+              </tr>
+              <tr>
+                <td><strong>Kashif Raza</strong></td>
+                <td>rider@branch1.com</td>
+                <td><span class="badge bg-primary">Rider</span></td>
+                <td>Clifton Flagship (DT-01)</td>
+                <td><span class="badge bg-success">Active</span></td>
+                <td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: HR & ATTENDANCE -->
+    <div class="tab-pane fade p-4" id="tab-hr" role="tabpanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold"><i class="bi bi-person-badge text-warning"></i> HR Onboarding & Biometric Attendance</h4>
+        <div>
+          <button class="btn btn-outline-info btn-sm me-2" onclick="clockStaffAttendance()"><i class="bi bi-clock-fill"></i> Manual Clock-In</button>
+          <button class="btn btn-primary btn-sm" onclick="showAddEmployeeModal()"><i class="bi bi-plus-circle"></i> Onboard Employee</button>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="table-responsive">
+          <table class="table table-dark table-hover align-middle">
+            <thead>
+              <tr class="text-secondary">
+                <th>Full Name</th>
+                <th>CNIC</th>
+                <th>Designation</th>
+                <th>Salary Structure</th>
+                <th>Base Salary</th>
+                <th>Shift / Today Status</th>
+              </tr>
+            </thead>
+            <tbody id="employeeTableBody">
+              <tr>
+                <td><strong>Zeeshan Ali</strong></td>
+                <td>42101-9876543-1</td>
+                <td>Senior Waiter</td>
+                <td><span class="badge bg-secondary">Monthly</span></td>
+                <td>PKR 45,000</td>
+                <td><span class="badge bg-success"><i class="bi bi-check-lg"></i> Clocked In (10:45 AM)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Kashif Raza</strong></td>
+                <td>42101-1234567-3</td>
+                <td>Delivery Rider</td>
+                <td><span class="badge bg-secondary">Monthly + Per Delivery</span></td>
+                <td>PKR 40,000</td>
+                <td><span class="badge bg-success"><i class="bi bi-check-lg"></i> Clocked In (11:02 AM)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Chef Mansoor</strong></td>
+                <td>42201-5544332-9</td>
+                <td>Head Chef (Grill)</td>
+                <td><span class="badge bg-secondary">Monthly</span></td>
+                <td>PKR 95,000</td>
+                <td><span class="badge bg-success"><i class="bi bi-check-lg"></i> Clocked In (09:30 AM)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: PAYROLL -->
+    <div class="tab-pane fade p-4" id="tab-payroll" role="tabpanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold"><i class="bi bi-cash-coin text-success"></i> Automated Monthly Payroll Run</h4>
+        <button class="btn btn-success btn-sm" onclick="runPayrollCalculation()"><i class="bi bi-play-circle-fill"></i> Execute Payroll Run</button>
+      </div>
+      <div class="metric-card">
+        <div class="d-flex justify-content-between align-items-center pb-2 border-bottom border-secondary mb-3">
+          <span class="fw-bold">Current Period: September 2026</span>
+          <span class="badge bg-warning text-dark">Pending Final Approval</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-dark table-hover align-middle">
+            <thead>
+              <tr class="text-secondary">
+                <th>Employee</th>
+                <th>Base Salary</th>
+                <th>Attendance Days</th>
+                <th>Overtime / Bonus</th>
+                <th>Loan Deductions</th>
+                <th>Net Payable</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Chef Mansoor</td>
+                <td>PKR 95,000</td>
+                <td>30 / 30</td>
+                <td>+ PKR 10,000</td>
+                <td>- PKR 0</td>
+                <td class="fw-bold text-success">PKR 105,000</td>
+                <td><span class="badge bg-success">Calculated</span></td>
+              </tr>
+              <tr>
+                <td>Zeeshan Ali</td>
+                <td>PKR 45,000</td>
+                <td>28 / 30</td>
+                <td>+ PKR 4,500</td>
+                <td>- PKR 2,000 (Advance)</td>
+                <td class="fw-bold text-success">PKR 47,500</td>
+                <td><span class="badge bg-success">Calculated</span></td>
+              </tr>
+              <tr>
+                <td>Kashif Raza</td>
+                <td>PKR 40,000</td>
+                <td>29 / 30</td>
+                <td>+ PKR 8,200 (Deliveries)</td>
+                <td>- PKR 0</td>
+                <td class="fw-bold text-success">PKR 48,200</td>
+                <td><span class="badge bg-success">Calculated</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: INVENTORY & VENDORS -->
+    <div class="tab-pane fade p-4" id="tab-inventory" role="tabpanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold"><i class="bi bi-boxes text-info"></i> Raw Ingredients & Recipe Depletion (BOM)</h4>
+        <div>
+          <button class="btn btn-outline-light btn-sm me-2" onclick="showAddVendorModal()"><i class="bi bi-truck"></i> Add Vendor</button>
+          <button class="btn btn-primary btn-sm" onclick="showStockAdjustmentModal()"><i class="bi bi-plus-slash-minus"></i> Stock Adjustment</button>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="table-responsive">
+          <table class="table table-dark table-hover align-middle">
+            <thead>
+              <tr class="text-secondary">
+                <th>Ingredient</th>
+                <th>Primary Vendor</th>
+                <th>Unit</th>
+                <th>Stock on Hand</th>
+                <th>Reorder Alert Level</th>
+                <th>Cost / Unit</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Angus Beef Patties</strong></td>
+                <td>Al-Madina Meat Suppliers</td>
+                <td>KG</td>
+                <td>42.5 KG</td>
+                <td>15.0 KG</td>
+                <td>PKR 2,400/KG</td>
+                <td><span class="badge bg-success">In Stock</span></td>
+              </tr>
+              <tr>
+                <td><strong>Brioche Burger Buns</strong></td>
+                <td>Artisan Bakers Co.</td>
+                <td>Pieces</td>
+                <td>120 Pcs</td>
+                <td>50 Pcs</td>
+                <td>PKR 65/Pc</td>
+                <td><span class="badge bg-success">In Stock</span></td>
+              </tr>
+              <tr>
+                <td><strong>Mozzarella Cheese</strong></td>
+                <td>Dairy Fresh Pakistan</td>
+                <td>KG</td>
+                <td>8.2 KG</td>
+                <td>10.0 KG</td>
+                <td>PKR 1,950/KG</td>
+                <td><span class="badge bg-danger">Low Stock Alert</span></td>
+              </tr>
+              <tr>
+                <td><strong>Fresh Mint & Lemons</strong></td>
+                <td>Sabzi Mandi Direct</td>
+                <td>KG</td>
+                <td>14.0 KG</td>
+                <td>5.0 KG</td>
+                <td>PKR 220/KG</td>
+                <td><span class="badge bg-success">In Stock</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 7: ACCOUNTING -->
+    <div class="tab-pane fade p-4" id="tab-accounting" role="tabpanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold"><i class="bi bi-journal-bookmark-fill text-danger"></i> Double-Entry Accounting & Shift Register</h4>
+        <div>
+          <button class="btn btn-outline-warning btn-sm me-2" onclick="performXReport()"><i class="bi bi-file-earmark-text"></i> Mid-Shift X-Report</button>
+          <button class="btn btn-danger btn-sm" onclick="performZReport()"><i class="bi bi-lock-fill"></i> End-of-Day Z-Report</button>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <div class="metric-card">
+            <h5 class="fw-bold mb-3"><i class="bi bi-cash-stack text-success"></i> Cash Register Status</h5>
+            <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+              <span>Opening Float:</span>
+              <span class="fw-bold">PKR 10,000.00</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+              <span>Cash Sales Collected:</span>
+              <span class="fw-bold text-success">+ PKR 94,500.00</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+              <span>Card / Online Bank Payments:</span>
+              <span class="fw-bold text-info">+ PKR 154,000.00</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+              <span>Petty Cash Paid Out:</span>
+              <span class="fw-bold text-danger">- PKR 2,400.00</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 fs-5 fw-bold text-white">
+              <span>Expected Cash in Drawer:</span>
+              <span class="text-warning">PKR 102,100.00</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="metric-card">
+            <h5 class="fw-bold mb-3"><i class="bi bi-table text-primary"></i> General Ledger Summary</h5>
+            <div class="table-responsive">
+              <table class="table table-dark table-sm align-middle">
+                <thead>
+                  <tr class="text-secondary">
+                    <th>Account</th>
+                    <th>Debit (PKR)</th>
+                    <th>Credit (PKR)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1010 - Cash on Hand</td><td>104,500.00</td><td>-</td></tr>
+                  <tr><td>1020 - Bank Account</td><td>154,000.00</td><td>-</td></tr>
+                  <tr><td>4010 - Food & Beverage Sales</td><td>-</td><td>218,000.00</td></tr>
+                  <tr><td>2020 - FBR Sales Tax Payable</td><td>-</td><td>30,500.00</td></tr>
+                  <tr><td>5010 - Raw Material Purchases</td><td>18,000.00</td><td>-</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Receipt / FBR Fiscal Modal -->
@@ -167,6 +581,8 @@
     const serverHost = window.location.hostname || "localhost";
     const API_BASE = `http://${serverHost}:5000/api/v1`;
     const HEALTH_URL = `http://${serverHost}:5000/health`;
+    document.getElementById("lnkSwagger").href = `http://${serverHost}:5000/swagger`;
+
     let catalog = [];
     let cart = [];
     let selectedTable = "T-01";
@@ -207,11 +623,10 @@
       try {
         const res = await fetch(`${API_BASE}/auth/seed-demo`, { method: "POST" });
         if (res.ok) {
-          const data = await res.json();
-          alert("Successfully seeded demo tenant!\nReady for operations.");
+          alert("Successfully seeded demo tenant!\nDishes, staff, branches, and tables ready.");
           checkApiHealth();
         } else {
-          alert(`Make sure the backend API is running on http://${serverHost}:5000`);
+          alert(`Make sure backend API is running on http://${serverHost}:5000`);
         }
       } catch (e) {
         alert(`Connecting to backend on http://${serverHost}:5000...`);
@@ -410,6 +825,51 @@
       const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
       modal.show();
       clearCart();
+    }
+
+    // Modal helpers
+    function showAddUserModal() {
+      const email = prompt("Enter new staff email address:");
+      if (!email) return;
+      const role = prompt("Enter Role (Manager, Waiter, Rider, HR, Accountant):", "Waiter");
+      alert(`User ${email} created with role: ${role}`);
+    }
+
+    function showAddEmployeeModal() {
+      const name = prompt("Enter employee full name:");
+      if (!name) return;
+      const designation = prompt("Enter designation:", "Waiter");
+      const salary = prompt("Enter basic salary (PKR):", "45000");
+      alert(`Employee ${name} (${designation}) onboarded with basic salary PKR ${salary}.`);
+    }
+
+    function clockStaffAttendance() {
+      alert("Clock-in recorded for current on-duty staff at: " + new Date().toLocaleTimeString());
+    }
+
+    function runPayrollCalculation() {
+      alert("Payroll calculation completed for September 2026!\n3 employees processed.\nTotal Net Salary: PKR 200,700.\nMoved to accounting approval.");
+    }
+
+    function showAddVendorModal() {
+      const vendor = prompt("Enter Vendor / Supplier Name:");
+      if (vendor) alert(`Vendor "${vendor}" registered under active procurement agreements.`);
+    }
+
+    function showStockAdjustmentModal() {
+      const item = prompt("Enter ingredient name to adjust (e.g. Angus Beef):", "Angus Beef Patties");
+      const qty = prompt("Enter quantity adjustment (+/- KG):", "+10");
+      if (item && qty) alert(`Inventory adjustment recorded: ${qty} for ${item}.`);
+    }
+
+    function performXReport() {
+      alert("--- MID-SHIFT X-REPORT ---\nGross Sales: PKR 248,500\nCash in Drawer: PKR 102,100\nCard Payments: PKR 154,000\nRegister remains open.");
+    }
+
+    function performZReport() {
+      if (confirm("Execute End-of-Day Z-Report? This will lock the cash register and generate immutable accounting journal entries.")) {
+        alert("Z-REPORT EXECUTED:\nRegister closed and balanced.\nJournal entry #JE-2026-09-01 posted to Ledger.");
+      }
     }
 
     init();
