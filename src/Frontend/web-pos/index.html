@@ -32,36 +32,41 @@
 
   <!-- Top Main Header -->
   <nav class="navbar pos-navbar px-3 py-2">
-    <div class="container-fluid d-flex justify-content-between align-items-center">
+    <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap gap-2">
       <div class="d-flex align-items-center gap-3">
         <span class="fs-4 fw-bold text-primary"><i class="bi bi-shop"></i> Urban Bistro SaaS</span>
-        
-        <!-- Active User Profile Dropdown / Switcher -->
-        <div class="dropdown">
-          <button class="btn btn-dark btn-sm dropdown-toggle border border-secondary" type="button" id="userMenuBtn" data-bs-toggle="dropdown">
-            <i class="bi bi-person-circle text-info me-1"></i>
-            <span id="activeUserName">Admin (Super/Restaurant)</span>
-            <span id="activeRoleBadge" class="badge bg-danger ms-1">Super Admin</span>
+        <span class="badge bg-success d-none d-md-inline-block"><i class="bi bi-shield-check"></i> Multi-Tenant (DT-01)</span>
+      </div>
+
+      <!-- Prominent Active User / Role Badge & Quick Switcher -->
+      <div class="d-flex align-items-center gap-2 bg-dark p-1 px-3 rounded-pill border border-secondary shadow-sm">
+        <span class="text-secondary small fw-semibold"><i class="bi bi-person-fill-check text-success"></i> Active User:</span>
+        <strong id="activeUserName" class="text-white small">Hassan Tariq (Super Admin)</strong>
+        <span id="activeRoleBadge" class="badge bg-danger">SuperAdmin</span>
+
+        <!-- Dropdown to switch user -->
+        <div class="dropdown ms-1">
+          <button class="btn btn-sm btn-outline-light dropdown-toggle py-0 px-2" type="button" id="userMenuBtn" data-bs-toggle="dropdown" style="font-size:0.75rem;">
+            Switch Role
           </button>
           <ul class="dropdown-menu dropdown-menu-dark shadow border border-secondary">
-            <li><h6 class="dropdown-header">Switch Simulated Role</h6></li>
-            <li><a class="dropdown-item" href="#" onclick="switchRole('SuperAdmin', 'Super Admin Developer', 'admin@urbanbistro.com')"><i class="bi bi-shield-lock-fill text-danger me-2"></i> Super Admin</a></li>
-            <li><a class="dropdown-item" href="#" onclick="switchRole('RestaurantAdmin', 'Restaurant Owner', 'owner@urbanbistro.com')"><i class="bi bi-shop-window text-warning me-2"></i> Restaurant Admin</a></li>
-            <li><a class="dropdown-item" href="#" onclick="switchRole('BranchManager', 'Bilal Ahmed (Manager)', 'manager@branch1.com')"><i class="bi bi-briefcase-fill text-info me-2"></i> Branch Manager</a></li>
-            <li><a class="dropdown-item" href="#" onclick="switchRole('CounterPOS', 'Cashier Station 1', 'cashier@branch1.com')"><i class="bi bi-calculator-fill text-success me-2"></i> Counter / Cashier</a></li>
+            <li><h6 class="dropdown-header text-uppercase text-secondary" style="font-size:0.7rem;">Select Active Persona</h6></li>
+            <li><a class="dropdown-item" href="#" onclick="switchRole('SuperAdmin', 'Hassan Tariq (Super Admin)', 'admin@urbanbistro.com')"><i class="bi bi-shield-lock-fill text-danger me-2"></i> Super Admin (Hassan Tariq)</a></li>
+            <li><a class="dropdown-item" href="#" onclick="switchRole('RestaurantAdmin', 'Hamza Khan (Owner)', 'owner@urbanbistro.com')"><i class="bi bi-shop-window text-warning me-2"></i> Restaurant Admin (Owner)</a></li>
+            <li><a class="dropdown-item" href="#" onclick="switchRole('BranchManager', 'Bilal Ahmed (Manager)', 'manager@branch1.com')"><i class="bi bi-briefcase-fill text-info me-2"></i> Branch Manager (Bilal Ahmed)</a></li>
+            <li><a class="dropdown-item" href="#" onclick="switchRole('CounterPOS', 'Ayesha Noor (Cashier)', 'cashier@branch1.com')"><i class="bi bi-calculator-fill text-success me-2"></i> Cashier / Counter (Ayesha)</a></li>
+            <li><a class="dropdown-item" href="#" onclick="switchRole('Waiter', 'Zeeshan Ali (Waiter)', 'waiter@branch1.com')"><i class="bi bi-person-badge text-primary me-2"></i> Waiter (Zeeshan Ali)</a></li>
             <li><hr class="dropdown-divider border-secondary"></li>
-            <li><a class="dropdown-item text-secondary" href="#" onclick="openLoginModal()"><i class="bi bi-key-fill me-2"></i> Real API JWT Login...</a></li>
+            <li><a class="dropdown-item text-info" href="#" onclick="openLoginModal()"><i class="bi bi-key-fill me-2"></i> Login with Real API Credentials...</a></li>
           </ul>
         </div>
+      </div>
 
-        <span class="badge bg-success d-none d-md-inline-block"><i class="bi bi-shield-check"></i> Multi-Tenant (DT-01)</span>
+      <div class="d-flex align-items-center gap-2">
         <a id="lnkSwagger" href="http://localhost:5000/swagger" target="_blank" class="badge bg-info text-dark text-decoration-none">
           <i class="bi bi-file-code-fill"></i> REST API Docs
         </a>
-      </div>
-
-      <div class="d-flex align-items-center gap-3">
-        <button id="btnSeed" class="btn btn-outline-warning btn-sm" onclick="seedDemoData()"><i class="bi bi-lightning-charge-fill"></i> Reset / Seed Demo</button>
+        <button id="btnSeed" class="btn btn-outline-warning btn-sm" onclick="seedDemoData()"><i class="bi bi-lightning-charge-fill"></i> Seed Demo</button>
         <span class="text-secondary small">API: <strong id="apiStatus" class="text-info">Checking...</strong></span>
       </div>
     </div>
@@ -104,12 +109,64 @@
       <div class="container-fluid">
         <div class="row">
           <div class="col-lg-8 col-xl-8 p-3" style="height: calc(100vh - 120px); overflow-y: auto;">
-            <div class="mb-3 p-3 bg-dark rounded-3 border border-secondary border-opacity-25">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-secondary small fw-bold text-uppercase"><i class="bi bi-grid-3x3-gap"></i> Select Dining Table</span>
-                <span id="selectedTableLabel" class="badge bg-primary">Dine-In: T-01</span>
+            <!-- Prominent Order Mode Selection Bar (Dine-In vs Takeaway vs Delivery) -->
+            <div class="mb-3 p-3 bg-dark rounded-3 border border-primary border-opacity-50 shadow-sm">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <span class="text-secondary small fw-bold text-uppercase"><i class="bi bi-tag-fill text-warning"></i> Order Fulfillment Mode:</span>
+                <span id="orderModeBadge" class="badge bg-success fs-6"><i class="bi bi-cup-hot"></i> DINE-IN TABLE ORDER</span>
               </div>
-              <div id="tableList" class="d-flex flex-wrap"></div>
+              <div class="btn-group w-100 mb-2" role="group">
+                <button type="button" id="btnModeDineIn" class="btn btn-primary fw-bold py-2" onclick="setOrderMode('DineIn')">
+                  <i class="bi bi-cup-hot fs-5 d-block mb-1"></i> Dine-In (Table)
+                </button>
+                <button type="button" id="btnModeTakeaway" class="btn btn-outline-warning fw-bold py-2" onclick="setOrderMode('Takeaway')">
+                  <i class="bi bi-bag-check fs-5 d-block mb-1"></i> Takeaway / Pickup
+                </button>
+                <button type="button" id="btnModeDelivery" class="btn btn-outline-info fw-bold py-2" onclick="setOrderMode('Delivery')">
+                  <i class="bi bi-bicycle fs-5 d-block mb-1"></i> Door Delivery
+                </button>
+              </div>
+
+              <!-- Dine-In Table Box (Visible only when Dine-In) -->
+              <div id="tableSelectorBox" class="mt-2 pt-2 border-top border-secondary">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="text-secondary small fw-bold"><i class="bi bi-grid-3x3-gap text-info"></i> Select Dining Table:</span>
+                  <span id="selectedTableLabel" class="badge bg-primary">Table: T-01</span>
+                </div>
+                <div id="tableList" class="d-flex flex-wrap"></div>
+              </div>
+
+              <!-- Takeaway / Pickup Box (Visible only when Takeaway) -->
+              <div id="takeawayBox" class="mt-2 pt-2 border-top border-secondary d-none">
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label text-secondary small mb-1"><i class="bi bi-person text-warning"></i> Customer Name (for Pickup Token)</label>
+                    <input type="text" id="takeawayCustomerName" class="form-control form-control-sm bg-black text-white border-secondary" placeholder="e.g. Ali Raza" value="Walk-in Customer" />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label text-secondary small mb-1"><i class="bi bi-ticket-perforated text-warning"></i> Takeaway Token #</label>
+                    <input type="text" id="takeawayTokenNumber" class="form-control form-control-sm bg-black text-warning border-secondary fw-bold" readonly value="TK-108" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Delivery Box (Visible only when Delivery) -->
+              <div id="deliveryBox" class="mt-2 pt-2 border-top border-secondary d-none">
+                <div class="row g-2">
+                  <div class="col-md-4">
+                    <label class="form-label text-secondary small mb-1"><i class="bi bi-person text-info"></i> Customer Name</label>
+                    <input type="text" id="deliveryCustomerName" class="form-control form-control-sm bg-black text-white border-secondary" placeholder="Customer Name" />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label text-secondary small mb-1"><i class="bi bi-telephone text-info"></i> Phone #</label>
+                    <input type="text" id="deliveryPhone" class="form-control form-control-sm bg-black text-white border-secondary" placeholder="0300-1234567" />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label text-secondary small mb-1"><i class="bi bi-geo-alt text-info"></i> Dropoff Address</label>
+                    <input type="text" id="deliveryAddress" class="form-control form-control-sm bg-black text-white border-secondary" placeholder="Block 4, Clifton Karachi" />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Category Tabs -->
@@ -132,16 +189,10 @@
                 <button class="btn btn-sm btn-outline-danger" onclick="clearCart()"><i class="bi bi-trash"></i> Clear</button>
               </div>
 
-              <!-- Order Type selector -->
-              <div class="btn-group w-100 mb-3" role="group">
-                <input type="radio" class="btn-check" name="orderType" id="typeDineIn" checked onchange="setOrderType('DineIn')">
-                <label class="btn btn-outline-primary btn-sm" for="typeDineIn"><i class="bi bi-cup-hot"></i> Dine-In</label>
-
-                <input type="radio" class="btn-check" name="orderType" id="typeTakeaway" onchange="setOrderType('Takeaway')">
-                <label class="btn btn-outline-primary btn-sm" for="typeTakeaway"><i class="bi bi-bag"></i> Takeaway</label>
-
-                <input type="radio" class="btn-check" name="orderType" id="typeDelivery" onchange="setOrderType('Delivery')">
-                <label class="btn btn-outline-primary btn-sm" for="typeDelivery"><i class="bi bi-bicycle"></i> Delivery</label>
+              <!-- Order Mode indicator in cart -->
+              <div class="d-flex justify-content-between align-items-center p-2 rounded mb-2 bg-black border border-secondary">
+                <span class="text-secondary small fw-bold">Fulfillment:</span>
+                <span id="cartOrderModeSummary" class="badge bg-success fw-bold"><i class="bi bi-cup-hot"></i> Dine-In: T-01</span>
               </div>
 
               <div id="cartItems" class="cart-items-scroll">
@@ -305,8 +356,39 @@
     <!-- TAB 4: USERS & STAFF -->
     <div class="tab-pane fade p-4" id="tab-users" role="tabpanel">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold"><i class="bi bi-people-fill text-primary"></i> Staff & User Roles Management</h4>
+        <div>
+          <h4 class="fw-bold m-0"><i class="bi bi-people-fill text-primary"></i> Staff & User Roles Management</h4>
+          <span class="text-secondary small">Manage system users, role-based access control (RBAC), and active operator credentials</span>
+        </div>
         <button class="btn btn-primary btn-sm" onclick="showAddUserModal()"><i class="bi bi-person-plus-fill"></i> Add User / Staff</button>
+      </div>
+
+      <!-- Current Active Session Card -->
+      <div class="metric-card mb-4 border-info border-opacity-50">
+        <div class="row align-items-center g-3">
+          <div class="col-md-7">
+            <div class="d-flex align-items-center gap-3">
+              <div class="bg-primary bg-opacity-25 p-3 rounded-circle text-primary fs-3">
+                <i class="bi bi-person-badge-fill"></i>
+              </div>
+              <div>
+                <div class="text-secondary small text-uppercase fw-bold">Current Active Operator Session</div>
+                <h5 class="fw-bold text-white mb-0" id="sessionUserName">Hassan Tariq (Super Admin)</h5>
+                <span class="text-info small" id="sessionUserEmail">admin@urbanbistro.com</span> |
+                <span class="badge bg-danger" id="sessionUserRole">SuperAdmin</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-5 text-md-end">
+            <div class="small text-secondary mb-2">Simulate / Switch Logged-in Persona:</div>
+            <div class="btn-group btn-group-sm flex-wrap" role="group">
+              <button class="btn btn-outline-danger" onclick="switchRole('SuperAdmin', 'Hassan Tariq (Super Admin)', 'admin@urbanbistro.com')">Super Admin</button>
+              <button class="btn btn-outline-warning" onclick="switchRole('RestaurantAdmin', 'Hamza Khan (Owner)', 'owner@urbanbistro.com')">Rest. Admin</button>
+              <button class="btn btn-outline-info" onclick="switchRole('BranchManager', 'Bilal Ahmed (Manager)', 'manager@branch1.com')">Manager</button>
+              <button class="btn btn-outline-success" onclick="switchRole('CounterPOS', 'Ayesha Noor (Cashier)', 'cashier@branch1.com')">Cashier</button>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="metric-card">
         <div class="table-responsive">
@@ -881,12 +963,84 @@
       const badge = document.getElementById("activeRoleBadge");
       badge.textContent = role;
       
-      if (role === 'SuperAdmin') badge.className = "badge bg-danger ms-1";
-      else if (role === 'RestaurantAdmin') badge.className = "badge bg-warning text-dark ms-1";
-      else if (role === 'BranchManager') badge.className = "badge bg-info text-dark ms-1";
-      else badge.className = "badge bg-success ms-1";
+      // Update badge style
+      if (role === 'SuperAdmin') badge.className = "badge bg-danger";
+      else if (role === 'RestaurantAdmin') badge.className = "badge bg-warning text-dark";
+      else if (role === 'BranchManager') badge.className = "badge bg-info text-dark";
+      else if (role === 'Waiter') badge.className = "badge bg-primary";
+      else badge.className = "badge bg-success";
 
-      alert(`Switched context to: ${role} (${name}). Permissions updated!`);
+      // Also update Users tab session card
+      const sessName = document.getElementById("sessionUserName");
+      const sessEmail = document.getElementById("sessionUserEmail");
+      const sessRole = document.getElementById("sessionUserRole");
+      if (sessName) sessName.textContent = name;
+      if (sessEmail) sessEmail.textContent = email;
+      if (sessRole) {
+        sessRole.textContent = role;
+        sessRole.className = badge.className;
+      }
+
+      alert(`Active Persona Switched to: ${role}\nUser: ${name}\nEmail: ${email}`);
+    }
+
+    // Order Fulfillment Mode Switcher (Dine-In, Takeaway, Delivery)
+    function setOrderMode(mode) {
+      currentOrderType = mode;
+      
+      const btnDineIn = document.getElementById("btnModeDineIn");
+      const btnTakeaway = document.getElementById("btnModeTakeaway");
+      const btnDelivery = document.getElementById("btnModeDelivery");
+
+      const boxTable = document.getElementById("tableSelectorBox");
+      const boxTakeaway = document.getElementById("takeawayBox");
+      const boxDelivery = document.getElementById("deliveryBox");
+
+      const badge = document.getElementById("orderModeBadge");
+      const cartSummary = document.getElementById("cartOrderModeSummary");
+
+      if (mode === "DineIn") {
+        btnDineIn.className = "btn btn-primary fw-bold py-2";
+        btnTakeaway.className = "btn btn-outline-warning fw-bold py-2";
+        btnDelivery.className = "btn btn-outline-info fw-bold py-2";
+
+        boxTable.classList.remove("d-none");
+        boxTakeaway.classList.add("d-none");
+        boxDelivery.classList.add("d-none");
+
+        badge.className = "badge bg-success fs-6";
+        badge.innerHTML = `<i class="bi bi-cup-hot"></i> DINE-IN TABLE ORDER`;
+        if (cartSummary) cartSummary.innerHTML = `<i class="bi bi-cup-hot"></i> Dine-In: ${selectedTable}`;
+      } else if (mode === "Takeaway") {
+        btnDineIn.className = "btn btn-outline-primary fw-bold py-2";
+        btnTakeaway.className = "btn btn-warning text-dark fw-bold py-2";
+        btnDelivery.className = "btn btn-outline-info fw-bold py-2";
+
+        boxTable.classList.add("d-none");
+        boxTakeaway.classList.remove("d-none");
+        boxDelivery.classList.add("d-none");
+
+        // Rotate takeaway token
+        const tokenNum = "TK-" + Math.floor(100 + Math.random() * 900);
+        const tokenField = document.getElementById("takeawayTokenNumber");
+        if (tokenField) tokenField.value = tokenNum;
+
+        badge.className = "badge bg-warning text-dark fs-6";
+        badge.innerHTML = `<i class="bi bi-bag-check"></i> TAKEAWAY / PICKUP (${tokenNum})`;
+        if (cartSummary) cartSummary.innerHTML = `<i class="bi bi-bag-check"></i> Takeaway: ${tokenNum}`;
+      } else if (mode === "Delivery") {
+        btnDineIn.className = "btn btn-outline-primary fw-bold py-2";
+        btnTakeaway.className = "btn btn-outline-warning fw-bold py-2";
+        btnDelivery.className = "btn btn-info text-dark fw-bold py-2";
+
+        boxTable.classList.add("d-none");
+        boxTakeaway.classList.add("d-none");
+        boxDelivery.classList.remove("d-none");
+
+        badge.className = "badge bg-info text-dark fs-6";
+        badge.innerHTML = `<i class="bi bi-bicycle"></i> DOOR DELIVERY`;
+        if (cartSummary) cartSummary.innerHTML = `<i class="bi bi-bicycle"></i> Door Delivery`;
+      }
     }
 
     function openLoginModal() {
@@ -1198,14 +1352,25 @@
         </div>
       `).join("");
 
+      let fulfillmentDetail = `<span>Table: ${selectedTable}</span>`;
+      if (currentOrderType === "Takeaway") {
+        const cName = document.getElementById("takeawayCustomerName") ? document.getElementById("takeawayCustomerName").value : "Walk-in";
+        const tNum = document.getElementById("takeawayTokenNumber") ? document.getElementById("takeawayTokenNumber").value : "TK-101";
+        fulfillmentDetail = `<span>Token: <strong>${tNum}</strong> (${cName})</span>`;
+      } else if (currentOrderType === "Delivery") {
+        const cName = document.getElementById("deliveryCustomerName") ? document.getElementById("deliveryCustomerName").value : "Guest";
+        const phone = document.getElementById("deliveryPhone") ? document.getElementById("deliveryPhone").value : "";
+        fulfillmentDetail = `<span>Delivery: <strong>${cName}</strong> (${phone})</span>`;
+      }
+
       document.getElementById("receiptDetails").innerHTML = `
         <div class="d-flex justify-content-between text-secondary">
           <span>Date: ${new Date().toLocaleDateString()}</span>
           <span>Time: ${new Date().toLocaleTimeString()}</span>
         </div>
         <div class="d-flex justify-content-between text-secondary mb-2">
-          <span>Order Type: ${currentOrderType}</span>
-          <span>Table: ${selectedTable}</span>
+          <span>Order Type: <strong>${currentOrderType}</strong></span>
+          ${fulfillmentDetail}
         </div>
         <div class="d-flex justify-content-between text-secondary mb-2">
           <span>Method: <strong>${method}</strong></span>
