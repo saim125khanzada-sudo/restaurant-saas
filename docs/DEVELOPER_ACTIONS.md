@@ -1,5 +1,5 @@
-﻿# DEVELOPER_ACTIONS.md â€” Human Operational Manual
-**Version:** 1.0 â€” Architecture Stage
+# DEVELOPER_ACTIONS.md — Human Operational Manual
+**Version:** 2.0 — Functional Testing & Deployment Stage  
 **Target System:** Multi-Tenant Restaurant Management SaaS Platform
 
 ---
@@ -10,122 +10,123 @@ In accordance with strict production-readiness principles, the boundary between 
 
 * **Antigravity Will Do:**
   * Write all backend C# / ASP.NET Core source code, clean architecture project files, EF Core configurations, and migrations.
-  * Write Next.js web portals (Super Admin, Restaurant Admin, POS, KDS) and Tailwind UI components.
-  * Write Flutter Android applications for Waiters and Riders.
+  * Write Next.js and responsive Web POS with real-time SignalR order processing and FBR fiscal integration.
+  * Write Flutter Android applications for Waiters and Riders with offline SQLite outbox sync and dynamic server host discovery.
   * Implement SignalR hubs, offline SQLite sync engine, idempotent API handlers, and unit/integration tests.
-  * Implement integration adapters/interfaces for External Payment, SMS, Maps, Biometric Attendance, and FBR Tax Authority.
-  * Provide Docker compose files, CI/CD GitHub Actions workflows, and deployment documentation.
+  * Provide Docker compose orchestration for PostgreSQL, Redis, ASP.NET Core API, and Nginx Web POS.
+  * Provide deployment and testing manuals.
 
 * **Human Developer (You) Must Do:**
-  * Create external cloud and SaaS accounts (Cloudflare, Cloud Provider, Firebase, Google Cloud / Maps, Payment Gateway, Domain Registrar).
-  * Generate, safely store, and inject production API keys and database credentials into `.env` / Cloud Secret Manager.
-  * Physically configure or provide connection parameters for thermal receipt printers (LAN/USB) and biometric machines.
-  * Apply for official FBR tax registration and live API credentials before production deployment.
-  * Manage Android app signing keystores and publish APK/AAB builds to internal testing or Google Play.
+  * Create Hyper-V External Switch on Windows host and attach to Ubuntu VM.
+  * Run Docker Compose on Ubuntu Server to start the stack.
+  * Run Flutter APK builds for Waiter and Rider applications.
+  * Provide physical/local Wi-Fi connectivity for mobile testing devices.
+  * Create external cloud and SaaS accounts (Cloudflare, Firebase, Google Maps, Payment Gateway, FBR) when migrating from local testing to commercial cloud production.
 
 ---
 
-## 2. Phase 0 & Phase 1 Human Operational Checklist
+## 2. Local Ubuntu Server & Hyper-V Operational Guide
 
-### Action 1: Create Git Repository & Branch Protection
-* **What to do:** Create a private GitHub repository for `restaurant-saas`.
-* **Why:** Central version control, code review, and automated CI/CD pipeline triggers.
-* **Where:** [GitHub New Repository](https://github.com/new)
-* **Step-by-Step Instructions:**
-  1. Log in to GitHub.
-  2. Click **New Repository**.
-  3. Name: `restaurant-saas`.
-  4. Select **Private**.
-  5. Check **Add .gitignore** and choose `.NET`.
-  6. Click **Create repository**.
-  7. Under **Settings** $\rightarrow$ **Branches**, add branch protection for `main` (require pull request reviews before merging).
+### Action 1: Configure Hyper-V External Virtual Switch
+* **What to do:** Switch the Ubuntu VM network adapter from Default Switch to an External Switch bridged to your physical Wi-Fi/Ethernet.
+* **Why:** Default switch places the VM in private host NAT; test mobile phones and tablets on your Wi-Fi will not be able to connect unless bridged to your physical LAN.
+* **Where:** Windows Host $\rightarrow$ Hyper-V Manager $\rightarrow$ Virtual Switch Manager.
+* **Exact Instructions:**
+  1. Open **Hyper-V Manager** as Administrator.
+  2. Click **Virtual Switch Manager** on the right panel.
+  3. Choose **External** $\rightarrow$ Click **Create Virtual Switch**.
+  4. Name: `LAN-Bridge-Switch`. Select your physical Wi-Fi / Ethernet adapter.
+  5. Check *"Allow management operating system to share this network adapter"*. Click **Apply** $\rightarrow$ **OK**.
+  6. Shut down Ubuntu VM $\rightarrow$ Right-click VM $\rightarrow$ **Settings** $\rightarrow$ **Network Adapter** $\rightarrow$ Select `LAN-Bridge-Switch` $\rightarrow$ **Apply**.
+  7. Start the VM.
 
-### Action 2: Cloudflare & Domain DNS Setup
-* **What to do:** Point your production/staging domain nameservers to Cloudflare.
-* **Why:** Provides DDoS mitigation, Web Application Firewall (WAF), Edge SSL/TLS, and caching.
-* **Where:** Domain Registrar (Namecheap/GoDaddy) & [Cloudflare Dashboard](https://dash.cloudflare.com)
-* **Step-by-Step Instructions:**
-  1. Add your domain in Cloudflare (e.g., `yourdomain.com`).
-  2. Select the Free or Pro plan.
-  3. Copy the two Cloudflare nameservers provided.
-  4. Log in to your domain registrar and replace default nameservers with Cloudflare's nameservers.
-  5. In Cloudflare **SSL/TLS** tab, set mode to **Full (Strict)**.
+### Action 2: Provision Ubuntu Server & Launch Containers
+* **What to do:** Install Docker on Ubuntu and run Docker Compose.
+* **Where:** Ubuntu VM terminal / SSH.
+* **Exact Commands:**
+  ```bash
+  # Check assigned local IP
+  ip a
+  # (Note your IP, e.g., 192.168.1.150)
 
-### Action 3: Provision PostgreSQL and Redis (Local / Dev)
-* **What to do:** Install Docker Desktop locally or prepare a managed cloud database.
-* **Why:** Required for EF Core migrations, tenant schema verification, and cache storage.
-* **Where:** Local Workstation (Docker Desktop) or Cloud Console (DigitalOcean / AWS / Azure).
-* **Expected Result:** A valid connection string formatted as:
-  `Host=localhost;Port=5432;Database=restaurant_saas_dev;Username=postgres;Password=YOUR_SECURE_PASSWORD;`
+  # Install Docker & Compose
+  sudo apt update && sudo apt install -y curl git docker.io docker-compose-v2 ufw
+  sudo usermod -aG docker $USER
+  newgrp docker
 
-### Action 4: Create Firebase Project for Cloud Messaging (FCM)
-* **What to do:** Create a Firebase project for push notifications to Waiter and Rider apps.
-* **Why:** Waiters need real-time order alerts; Riders need delivery dispatch notices.
-* **Where:** [Firebase Console](https://console.firebase.google.com)
-* **Step-by-Step Instructions:**
-  1. Click **Add Project** $\rightarrow$ Name it `restaurant-saas-notifications`.
-  2. Under Project Settings $\rightarrow$ **Service Accounts**, click **Generate new private key**.
-  3. Save the JSON file securely (e.g., `firebase-adminsdk.json`). **NEVER commit this to Git.**
-  4. In the mobile apps section, register two Android apps:
-     * Waiter App: `com.restaurantsaas.waiter`
-     * Rider App: `com.restaurantsaas.rider`
-  5. Download `google-services.json` for each and keep them ready for Phase 4 and Phase 5.
+  # Allow firewall ports
+  sudo ufw allow 22/tcp
+  sudo ufw allow 80/tcp
+  sudo ufw allow 5000/tcp
+  sudo ufw allow 5432/tcp
+  sudo ufw reload
 
-### Action 5: Set Up Google Maps Platform API Key
-* **What to do:** Create a Google Cloud project and enable Maps SDK for Android & Places API.
-* **Why:** Required by the Rider app for delivery route navigation, address geocoding, and distance calculations.
-* **Where:** [Google Cloud Console](https://console.cloud.google.com)
-* **Step-by-Step Instructions:**
-  1. Create project: `restaurant-saas-maps`.
-  2. Navigate to **APIs & Services** $\rightarrow$ **Library**.
-  3. Enable:
-     * Maps SDK for Android
-     * Geocoding API
-     * Distance Matrix API
-  4. Go to **Credentials** $\rightarrow$ **Create Credentials** $\rightarrow$ **API Key**.
-  5. Restrict the API key by Android app package name and SHA-1 fingerprint for mobile, and by HTTP referrer for web.
+  # Clone repo & launch
+  git clone https://github.com/saim125khanzada-sudo/restaurant-saas.git
+  cd restaurant-saas
+  cp .env.example .env
+  docker compose up -d --build
+  ```
+
+### Action 3: Seed Demo Tenant Data
+* **What to do:** Populate database with "The Urban Gourmet Bistro", categories, products, tables, and test accounts.
+* **Command:**
+  ```bash
+  curl -X POST http://localhost:5000/api/v1/auth/seed-demo
+  ```
+* **Test Credentials Created:**
+  * **Super / Restaurant Admin:** `admin@urbanbistro.com` / `AdminPass123!`
+  * **Waiter:** `waiter@branch1.com` / `WaiterPass123!`
+  * **Rider:** `rider@branch1.com` / `RiderPass123!`
 
 ---
 
-## 3. Required Environment Secrets Matrix (`.env.example`)
+## 3. Mobile Apps (Waiter & Rider) Testing Instructions
 
-The following variables must be maintained in `.env` (locally) or Cloud Secrets Manager (production):
+### Action 1: Build Android APKs
+* **What to do:** Generate debug/testing APKs for Android devices.
+* **Where:** Local workstation with Flutter SDK.
+* **Commands:**
+  ```bash
+  # Build Waiter App
+  cd src/Mobile/waiter_app
+  flutter pub get
+  flutter build apk --debug
+
+  # Build Rider App
+  cd ../rider_app
+  flutter pub get
+  flutter build apk --debug
+  ```
+* **Output files:**
+  * `src/Mobile/waiter_app/build/app/outputs/flutter-apk/app-debug.apk`
+  * `src/Mobile/rider_app/build/app/outputs/flutter-apk/app-debug.apk`
+
+### Action 2: Install and Configure Server Endpoint
+1. Transfer APKs to physical Android phones or tablets connected to the **same Wi-Fi**.
+2. Open Waiter or Rider App.
+3. Tap the **Settings (gear)** icon on the top right.
+4. Set Server URL to: `http://<UBUNTU_VM_IP>:5000` (e.g. `http://192.168.1.150:5000`).
+5. Tap **Save & Apply**.
+6. Sign in with the test accounts.
+
+---
+
+## 4. Environment Secrets Configuration (`.env`)
 
 ```bash
 # Database & Cache
-DATABASE_CONNECTION_STRING="Host=localhost;Port=5432;Database=restaurant_saas_dev;Username=postgres;Password=ChangeThisPasswordInProduction"
-REDIS_CONNECTION_STRING="localhost:6379,password=ChangeThisRedisPassword"
+DATABASE_CONNECTION_STRING="Host=postgres;Port=5432;Database=restaurant_saas_prod;Username=postgres;Password=postgrespassword;"
+REDIS_CONNECTION_STRING="redis:6379"
 
 # Security & JWT
-JWT_SECRET="Min64CharactersLongSecureRandomHexKeyForJwtTokensSigningProductionUseOnly!"
+JWT_SECRET="ProductionSuperSecretKeyForMultiTenantRestaurantSaaSPlatform2026!MustBeVeryLong"
 JWT_ISSUER="RestaurantSaaS.Api"
 JWT_AUDIENCE="RestaurantSaaS.Clients"
 JWT_ACCESS_EXPIRATION_MINUTES=15
 JWT_REFRESH_EXPIRATION_DAYS=7
 
-# Object Storage (S3 / Cloudflare R2)
-OBJECT_STORAGE_ENDPOINT="https://<account-id>.r2.cloudflarestorage.com"
-OBJECT_STORAGE_ACCESS_KEY="REPLACE_WITH_S3_ACCESS_KEY"
-OBJECT_STORAGE_SECRET_KEY="REPLACE_WITH_S3_SECRET_KEY"
-OBJECT_STORAGE_BUCKET_NAME="restaurant-saas-assets"
-
-# Push Notifications (Firebase)
+# Firebase & Google Maps (Optional for Local Test, Required for Cloud Production)
 FIREBASE_CREDENTIAL_PATH="/path/to/firebase-adminsdk.json"
-
-# Google Maps Platform
 GOOGLE_MAPS_API_KEY="AIzaSy...REPLACE_WITH_RESTRICTED_KEY"
-
-# External Integrations (Stubs for Dev, Configured in Phase 7 & 9)
-PAYMENT_GATEWAY_API_KEY="REPLACE_WHEN_GATEWAY_SELECTED"
-FBR_ENVIRONMENT="Sandbox"
-FBR_POS_REGISTRATION_NUMBER="REPLACE_WITH_OFFICIAL_FBR_ID"
-FBR_BEARER_TOKEN="REPLACE_WITH_OFFICIAL_FBR_TOKEN"
 ```
-
----
-
-## 4. Verification & Testing Instructions for Human Developer
-1. **Never commit real secrets:** Run `git status` before every push to ensure no `.json` credential keys or `.env` files are tracked.
-2. **Database Connectivity:** Test connection string locally using `psql` or pgAdmin.
-3. **Backup Restoration Verification:** In staging and production, scheduled backups must be tested by restoring into an isolated sandbox database instance.
-

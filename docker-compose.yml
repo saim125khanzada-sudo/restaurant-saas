@@ -1,6 +1,6 @@
-﻿services:
+services:
   postgres:
-    image: postgres:18-alpine
+    image: postgres:16-alpine
     container_name: restaurant_saas_postgres
     restart: unless-stopped
     environment:
@@ -51,6 +51,17 @@
       - JWT_SECRET=ProductionSuperSecretKeyForMultiTenantRestaurantSaaSPlatform2026!MustBeVeryLong
       - JWT_ISSUER=RestaurantSaaS.Api
       - JWT_AUDIENCE=RestaurantSaaS.Clients
+
+  web-pos:
+    image: nginx:alpine
+    container_name: restaurant_saas_pos
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./src/Frontend/web-pos:/usr/share/nginx/html:ro
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

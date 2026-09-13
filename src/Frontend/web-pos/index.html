@@ -1,15 +1,15 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Urban Gourmet Bistro - Cashier POS & Live Kitchen Screen</title>
+  <title>Urban Bistro POS & Live Kitchen Screen</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <style>
     body { background-color: #0f172a; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     .pos-navbar { background: #1e293b; border-bottom: 1px solid #334155; }
-    .category-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 12px; font-weight: 600; padding: 10px 18px; margin-right: 8px; transition: all 0.2s; }
+    .category-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 12px; font-weight: 600; padding: 10px 18px; margin-right: 8px; transition: all 0.2s; white-space: nowrap; }
     .category-btn.active, .category-btn:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
     .dish-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
     .dish-card:hover { transform: translateY(-3px); border-color: #3b82f6; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3); }
@@ -57,6 +57,9 @@
         <!-- Category Tabs -->
         <div id="categoryTabs" class="d-flex mb-3 overflow-x-auto pb-1">
           <button class="category-btn active" onclick="filterCategory('ALL')">All Dishes</button>
+          <button class="category-btn" onclick="filterCategory('Burgers')">Burgers</button>
+          <button class="category-btn" onclick="filterCategory('Pizzas')">Pizzas</button>
+          <button class="category-btn" onclick="filterCategory('Drinks')">Drinks</button>
         </div>
 
         <!-- Product Cards Grid -->
@@ -148,7 +151,7 @@
             </div>
             <hr class="border-secondary my-2"/>
             <div class="text-center">
-              <span class="badge bg-purple px-2 py-1 mb-1" style="background:#7c3aed;">FBR VERIFIED INVOICE</span>
+              <span class="badge px-2 py-1 mb-1" style="background:#7c3aed;">FBR VERIFIED INVOICE</span>
               <div id="rcptFbrCode" class="text-warning small fw-bold"></div>
               <div id="rcptQrData" class="text-secondary" style="font-size:0.65rem; word-break: break-all;"></div>
             </div>
@@ -161,14 +164,16 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    const API_BASE = "http://localhost:5000/api/v1";
+    const serverHost = window.location.hostname || "localhost";
+    const API_BASE = `http://${serverHost}:5000/api/v1`;
+    const HEALTH_URL = `http://${serverHost}:5000/health`;
     let catalog = [];
     let cart = [];
     let selectedTable = "T-01";
     let currentOrderType = "DineIn";
     let paymentMethodSelected = "Card";
+    let currentCategory = "ALL";
 
-    // Fallback menu data so the client works immediately even if API is starting
     const defaultCatalog = [
       { id: "1", name: "Smoky Angus Beef Burger", category: "Burgers", price: 1450, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400", desc: "Prime Angus, smoked gouda, brioche" },
       { id: "2", name: "Crispy Chicken Burger", category: "Burgers", price: 1150, img: "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=400", desc: "Spiced chicken thigh, chipotle slaw" },
@@ -179,16 +184,17 @@
     ];
 
     async function init() {
+      catalog = defaultCatalog;
       renderTables();
-      renderCatalog(defaultCatalog);
+      renderCatalog(catalog);
       checkApiHealth();
     }
 
     async function checkApiHealth() {
       try {
-        const res = await fetch("http://localhost:5000/health");
+        const res = await fetch(HEALTH_URL);
         if (res.ok) {
-          document.getElementById("apiStatus").textContent = "Connected (Port 5000)";
+          document.getElementById("apiStatus").textContent = `Connected (${serverHost}:5000)`;
           document.getElementById("apiStatus").className = "text-success";
         }
       } catch (e) {
@@ -199,16 +205,16 @@
 
     async function seedDemoData() {
       try {
-        const res = await fetch(${API_BASE}/auth/seed-demo, { method: "POST" });
+        const res = await fetch(`${API_BASE}/auth/seed-demo`, { method: "POST" });
         if (res.ok) {
           const data = await res.json();
-          alert(Successfully seeded demo tenant: ""!\n dishes and  tables ready.);
+          alert("Successfully seeded demo tenant!\nReady for operations.");
           checkApiHealth();
         } else {
-          alert("Make sure the backend API is running on http://localhost:5000");
+          alert(`Make sure the backend API is running on http://${serverHost}:5000`);
         }
       } catch (e) {
-        alert("Connecting to backend on http://localhost:5000...");
+        alert(`Connecting to backend on http://${serverHost}:5000...`);
       }
     }
 
@@ -216,17 +222,32 @@
       const container = document.getElementById("tableList");
       container.innerHTML = "";
       for (let i = 1; i <= 8; i++) {
-        const tName = T-;
+        const tName = `T-0${i}`;
         const pill = document.createElement("span");
-        pill.className = 	able-pill ;
-        pill.innerHTML = <i class="bi bi-circle-fill text-success me-1" style="font-size:0.5rem;"></i>;
+        pill.className = `table-pill ${selectedTable === tName ? "active" : ""}`;
+        pill.innerHTML = `<i class="bi bi-circle-fill text-success me-1" style="font-size:0.5rem;"></i>${tName}`;
         pill.onclick = () => {
           selectedTable = tName;
-          document.getElementById("selectedTableLabel").textContent = Dine-In: ;
+          document.getElementById("selectedTableLabel").textContent = `Dine-In: ${tName}`;
           renderTables();
         };
         container.appendChild(pill);
       }
+    }
+
+    function filterCategory(cat) {
+      currentCategory = cat;
+      const filtered = cat === "ALL" ? catalog : catalog.filter(x => x.category === cat);
+      renderCatalog(filtered);
+      
+      const buttons = document.querySelectorAll(".category-btn");
+      buttons.forEach(b => {
+        if (b.textContent.trim() === cat || (cat === "ALL" && b.textContent.includes("All"))) {
+          b.classList.add("active");
+        } else {
+          b.classList.remove("active");
+        }
+      });
     }
 
     function renderCatalog(items) {
@@ -235,21 +256,21 @@
       items.forEach(dish => {
         const col = document.createElement("div");
         col.className = "col-md-6 col-xl-4";
-        col.innerHTML = 
-          <div class="dish-card h-100" onclick="addToCart('', '', )">
-            <img src="" class="dish-img" alt="" />
+        col.innerHTML = `
+          <div class="dish-card h-100" onclick="addToCart('${dish.id}', '${dish.name.replace(/'/g, "\\'")}', ${dish.price})">
+            <img src="${dish.img}" class="dish-img" alt="${dish.name}" />
             <div class="p-3">
               <div class="d-flex justify-content-between align-items-start mb-1">
-                <h6 class="fw-bold mb-0 text-white"></h6>
+                <h6 class="fw-bold mb-0 text-white">${dish.name}</h6>
               </div>
-              <p class="text-secondary small mb-2" style="font-size:0.75rem;"></p>
+              <p class="text-secondary small mb-2" style="font-size:0.75rem;">${dish.desc}</p>
               <div class="d-flex justify-content-between align-items-center">
-                <span class="text-primary fw-bold">PKR </span>
+                <span class="text-primary fw-bold">PKR ${dish.price.toFixed(2)}</span>
                 <button class="btn btn-sm btn-primary rounded-circle"><i class="bi bi-plus"></i></button>
               </div>
             </div>
           </div>
-        ;
+        `;
         grid.appendChild(col);
       });
     }
@@ -287,11 +308,11 @@
     function updateCartUI() {
       const container = document.getElementById("cartItems");
       if (cart.length === 0) {
-        container.innerHTML = 
+        container.innerHTML = `
           <div class="text-center text-secondary py-5">
             <i class="bi bi-cart3 fs-1 d-block mb-2"></i>
             <span>Your cart is empty. Click dishes to add.</span>
-          </div>;
+          </div>`;
         document.getElementById("lblSubtotal").textContent = "PKR 0.00";
         document.getElementById("lblTax").textContent = "PKR 0.00";
         document.getElementById("lblTotal").textContent = "PKR 0.00";
@@ -306,32 +327,31 @@
         subtotal += itemTotal;
         const div = document.createElement("div");
         div.className = "cart-item";
-        div.innerHTML = 
+        div.innerHTML = `
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <div class="fw-bold text-white small"></div>
-              <div class="text-secondary small">PKR  x </div>
+              <div class="fw-bold text-white small">${item.name}</div>
+              <div class="text-secondary small">PKR ${item.price} x ${item.qty}</div>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-outline-secondary btn-qty" onclick="changeQty('', -1)">-</button>
-              <span class="fw-bold"></span>
-              <button class="btn btn-sm btn-outline-primary btn-qty" onclick="changeQty('', 1)">+</button>
-              <span class="fw-bold text-primary small ms-2">PKR </span>
+              <button class="btn btn-sm btn-outline-secondary btn-qty" onclick="changeQty('${item.id}', -1)">-</button>
+              <span class="fw-bold">${item.qty}</span>
+              <button class="btn btn-sm btn-outline-primary btn-qty" onclick="changeQty('${item.id}', 1)">+</button>
+              <span class="fw-bold text-primary small ms-2">PKR ${itemTotal.toFixed(2)}</span>
             </div>
           </div>
-        ;
+        `;
         container.appendChild(div);
       });
 
-      // Differential tax calculation (Card 5% vs Cash 15%)
       const taxRate = (paymentMethodSelected === "Card") ? 0.05 : 0.15;
       const taxAmount = subtotal * taxRate;
       const total = subtotal + taxAmount;
 
-      document.getElementById("lblSubtotal").textContent = PKR ;
-      document.getElementById("lblTaxRate").textContent = Tax (% ):;
-      document.getElementById("lblTax").textContent = PKR ;
-      document.getElementById("lblTotal").textContent = PKR ;
+      document.getElementById("lblSubtotal").textContent = `PKR ${subtotal.toFixed(2)}`;
+      document.getElementById("lblTaxRate").textContent = `Sales Tax (${paymentMethodSelected === "Card" ? "Card 5%" : "Cash 15%"}):`;
+      document.getElementById("lblTax").textContent = `PKR ${taxAmount.toFixed(2)}`;
+      document.getElementById("lblTotal").textContent = `PKR ${total.toFixed(2)}`;
     }
 
     function processCheckout(method) {
@@ -347,45 +367,45 @@
       const taxAmount = subtotal * taxRate;
       const total = subtotal + taxAmount;
 
-      const posReg = "POS-DT01";
-      const fbrInvoice = POS-DT01--;
+      const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+      const fbrInvoice = `POS-DT01-${randomSuffix}`;
 
-      let itemsHtml = cart.map(i => 
+      let itemsHtml = cart.map(i => `
         <div class="d-flex justify-content-between">
-          <span>x </span>
-          <span>PKR </span>
+          <span>${i.name} x ${i.qty}</span>
+          <span>PKR ${(i.price * i.qty).toFixed(2)}</span>
         </div>
-      ).join("");
+      `).join("");
 
-      document.getElementById("receiptDetails").innerHTML = 
+      document.getElementById("receiptDetails").innerHTML = `
         <div class="d-flex justify-content-between text-secondary">
-          <span>Date: </span>
-          <span>Time: </span>
+          <span>Date: ${new Date().toLocaleDateString()}</span>
+          <span>Time: ${new Date().toLocaleTimeString()}</span>
         </div>
         <div class="d-flex justify-content-between text-secondary mb-2">
-          <span>Order Type: </span>
-          <span>Table: </span>
+          <span>Order Type: ${currentOrderType}</span>
+          <span>Table: ${selectedTable}</span>
         </div>
         <div class="d-flex justify-content-between text-secondary mb-2">
-          <span>Method: <strong></strong></span>
-          <span>POS Reg: </span>
+          <span>Method: <strong>${method}</strong></span>
+          <span>POS Reg: POS-DT01</span>
         </div>
         <hr class="border-secondary my-1"/>
-        
+        ${itemsHtml}
         <hr class="border-secondary my-1"/>
         <div class="d-flex justify-content-between">
           <span>Subtotal:</span>
-          <span>PKR </span>
+          <span>PKR ${subtotal.toFixed(2)}</span>
         </div>
         <div class="d-flex justify-content-between">
-          <span>Sales Tax (%):</span>
-          <span>PKR </span>
+          <span>Sales Tax (${method === "Card" ? "5%" : "15%"}):</span>
+          <span>PKR ${taxAmount.toFixed(2)}</span>
         </div>
-      ;
+      `;
 
-      document.getElementById("rcptTotal").textContent = PKR ;
-      document.getElementById("rcptFbrCode").textContent = FBR Invoice #: ;
-      document.getElementById("rcptQrData").textContent = FBR:INVOICE=|TOTAL=|TAX=|STATUS=VERIFIED;
+      document.getElementById("rcptTotal").textContent = `PKR ${total.toFixed(2)}`;
+      document.getElementById("rcptFbrCode").textContent = `FBR Invoice #: ${fbrInvoice}`;
+      document.getElementById("rcptQrData").textContent = `FBR:INVOICE=${fbrInvoice}|TOTAL=${total.toFixed(2)}|TAX=${taxAmount.toFixed(2)}|STATUS=VERIFIED`;
 
       const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
       modal.show();

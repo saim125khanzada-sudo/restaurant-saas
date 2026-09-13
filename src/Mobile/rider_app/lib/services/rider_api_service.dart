@@ -1,4 +1,4 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/delivery_model.dart';
 
@@ -6,15 +6,21 @@ class RiderApiService {
   final Dio _dio;
   final FlutterSecureStorage _storage;
 
+  static const String defaultBaseUrl = 'http://10.0.2.2:5000/api/v1';
+
   RiderApiService({
     Dio? dio,
     FlutterSecureStorage? storage,
-    String baseUrl = 'http://10.0.2.2:5000/api/v1',
-  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: const Duration(seconds: 5))),
+    String? baseUrl,
+  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? defaultBaseUrl, connectTimeout: const Duration(seconds: 5))),
         _storage = storage ?? const FlutterSecureStorage() {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          final customUrl = await _storage.read(key: 'custom_api_url');
+          if (customUrl != null && customUrl.isNotEmpty) {
+            options.baseUrl = customUrl.endsWith('/api/v1') ? customUrl : '$customUrl/api/v1';
+          }
           final token = await _storage.read(key: 'jwt_token');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';

@@ -1,4 +1,4 @@
-﻿import 'package:signalr_netcore/signalr_netcore.dart';
+import 'package:signalr_netcore/signalr_netcore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 typedef OrderStatusCallback = void Function(String orderId, String status);
@@ -22,10 +22,14 @@ class SignalRService {
     TableStatusCallback? onTableStatusChanged,
   }) async {
     final token = await _storage.read(key: 'jwt_token');
+    final customUrl = await _storage.read(key: 'custom_api_url');
+    final effectiveHubUrl = (customUrl != null && customUrl.isNotEmpty)
+        ? '${customUrl.replaceAll('/api/v1', '')}/hubs/orders'
+        : _hubUrl;
 
     _hubConnection = HubConnectionBuilder()
         .withUrl(
-          _hubUrl,
+          effectiveHubUrl,
           options: HttpConnectionOptions(
             accessTokenFactory: () async => token ?? '',
           ),
