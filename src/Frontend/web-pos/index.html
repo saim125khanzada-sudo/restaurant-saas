@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Urban Bistro - Restaurant Management SaaS Suite</title>
+  <title>Urban Bistro - Restaurant SaaS & ERP Suite</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <style>
@@ -25,6 +25,7 @@
     .btn-qty { width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
     .badge-fbr { background: #8b5cf6; color: #fff; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; }
     .metric-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 20px; }
+    .role-badge { padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -33,15 +34,34 @@
   <nav class="navbar pos-navbar px-3 py-2">
     <div class="container-fluid d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-3">
-        <span class="fs-4 fw-bold text-primary"><i class="bi bi-shop"></i> Urban Bistro ERP & POS</span>
-        <span class="badge bg-success"><i class="bi bi-shield-check"></i> Multi-Tenant (DT-01)</span>
-        <span class="badge badge-fbr"><i class="bi bi-qr-code-scan"></i> FBR Tier-1 Certified</span>
+        <span class="fs-4 fw-bold text-primary"><i class="bi bi-shop"></i> Urban Bistro SaaS</span>
+        
+        <!-- Active User Profile Dropdown / Switcher -->
+        <div class="dropdown">
+          <button class="btn btn-dark btn-sm dropdown-toggle border border-secondary" type="button" id="userMenuBtn" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle text-info me-1"></i>
+            <span id="activeUserName">Admin (Super/Restaurant)</span>
+            <span id="activeRoleBadge" class="badge bg-danger ms-1">Super Admin</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-dark shadow border border-secondary">
+            <li><h6 class="dropdown-header">Switch Simulated Role</h6></li>
+            <li><a class="dropdown-item" href="#" onclick="switchRole('SuperAdmin', 'Super Admin Developer', 'admin@urbanbistro.com')"><i class="bi bi-shield-lock-fill text-danger me-2"></i> Super Admin</a></li>
+            <li><a class="dropdown-item" href="#" onclick="switchRole('RestaurantAdmin', 'Restaurant Owner', 'owner@urbanbistro.com')"><i class="bi bi-shop-window text-warning me-2"></i> Restaurant Admin</a></li>
+            <li><a class="dropdown-item" href="#" onclick="switchRole('BranchManager', 'Bilal Ahmed (Manager)', 'manager@branch1.com')"><i class="bi bi-briefcase-fill text-info me-2"></i> Branch Manager</a></li>
+            <li><a class="dropdown-item" href="#" onclick="switchRole('CounterPOS', 'Cashier Station 1', 'cashier@branch1.com')"><i class="bi bi-calculator-fill text-success me-2"></i> Counter / Cashier</a></li>
+            <li><hr class="dropdown-divider border-secondary"></li>
+            <li><a class="dropdown-item text-secondary" href="#" onclick="openLoginModal()"><i class="bi bi-key-fill me-2"></i> Real API JWT Login...</a></li>
+          </ul>
+        </div>
+
+        <span class="badge bg-success d-none d-md-inline-block"><i class="bi bi-shield-check"></i> Multi-Tenant (DT-01)</span>
         <a id="lnkSwagger" href="http://localhost:5000/swagger" target="_blank" class="badge bg-info text-dark text-decoration-none">
-          <i class="bi bi-file-code-fill"></i> REST API Swagger
+          <i class="bi bi-file-code-fill"></i> REST API Docs
         </a>
       </div>
+
       <div class="d-flex align-items-center gap-3">
-        <button id="btnSeed" class="btn btn-outline-warning btn-sm" onclick="seedDemoData()"><i class="bi bi-lightning-charge-fill"></i> Reset / Seed Demo Data</button>
+        <button id="btnSeed" class="btn btn-outline-warning btn-sm" onclick="seedDemoData()"><i class="bi bi-lightning-charge-fill"></i> Reset / Seed Demo</button>
         <span class="text-secondary small">API: <strong id="apiStatus" class="text-info">Checking...</strong></span>
       </div>
     </div>
@@ -54,7 +74,10 @@
         <button class="nav-link active" id="pos-tab" data-bs-toggle="tab" data-bs-target="#tab-pos" type="button"><i class="bi bi-calculator"></i> Counter POS</button>
       </li>
       <li class="nav-item">
-        <button class="nav-link" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#tab-dashboard" type="button"><i class="bi bi-speedometer2"></i> Analytics & Dashboard</button>
+        <button class="nav-link" id="products-tab" data-bs-toggle="tab" data-bs-target="#tab-products" type="button"><i class="bi bi-egg-fried"></i> Products & Menu</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#tab-dashboard" type="button"><i class="bi bi-speedometer2"></i> Analytics</button>
       </li>
       <li class="nav-item">
         <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#tab-users" type="button"><i class="bi bi-people-fill"></i> Users & Staff</button>
@@ -63,13 +86,13 @@
         <button class="nav-link" id="hr-tab" data-bs-toggle="tab" data-bs-target="#tab-hr" type="button"><i class="bi bi-person-badge"></i> HR & Attendance</button>
       </li>
       <li class="nav-item">
-        <button class="nav-link" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#tab-payroll" type="button"><i class="bi bi-cash-coin"></i> Payroll Runs</button>
+        <button class="nav-link" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#tab-payroll" type="button"><i class="bi bi-cash-coin"></i> Payroll</button>
       </li>
       <li class="nav-item">
         <button class="nav-link" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#tab-inventory" type="button"><i class="bi bi-boxes"></i> Inventory & Vendors</button>
       </li>
       <li class="nav-item">
-        <button class="nav-link" id="accounting-tab" data-bs-toggle="tab" data-bs-target="#tab-accounting" type="button"><i class="bi bi-journal-bookmark-fill"></i> Accounting & Register</button>
+        <button class="nav-link" id="accounting-tab" data-bs-toggle="tab" data-bs-target="#tab-accounting" type="button"><i class="bi bi-journal-bookmark-fill"></i> Accounting & Z-Report</button>
       </li>
     </ul>
   </div>
@@ -81,7 +104,6 @@
       <div class="container-fluid">
         <div class="row">
           <div class="col-lg-8 col-xl-8 p-3" style="height: calc(100vh - 120px); overflow-y: auto;">
-            <!-- Dine-in Table Selector -->
             <div class="mb-3 p-3 bg-dark rounded-3 border border-secondary border-opacity-25">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-secondary small fw-bold text-uppercase"><i class="bi bi-grid-3x3-gap"></i> Select Dining Table</span>
@@ -163,7 +185,41 @@
       </div>
     </div>
 
-    <!-- TAB 2: DASHBOARD -->
+    <!-- TAB 2: PRODUCT & MENU MANAGEMENT -->
+    <div class="tab-pane fade p-4" id="tab-products" role="tabpanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h4 class="fw-bold m-0"><i class="bi bi-egg-fried text-warning"></i> Product Catalog & Menu Editor</h4>
+          <span class="text-secondary small">Add, update prices, or remove menu items across branches</span>
+        </div>
+        <div>
+          <button class="btn btn-outline-info btn-sm me-2" onclick="openAddCategoryModal()"><i class="bi bi-folder-plus"></i> Add Category</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddProductModal()"><i class="bi bi-plus-circle-fill"></i> Add New Product</button>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="table-responsive">
+          <table class="table table-dark table-hover align-middle">
+            <thead>
+              <tr class="text-secondary">
+                <th>Product Image</th>
+                <th>Name & Description</th>
+                <th>Category</th>
+                <th>Selling Price (PKR)</th>
+                <th>Availability</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productManagementTable">
+              <!-- Dynamically populated from catalog array -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: DASHBOARD -->
     <div class="tab-pane fade p-4" id="tab-dashboard" role="tabpanel">
       <div class="row g-3 mb-4">
         <div class="col-md-3">
@@ -246,7 +302,7 @@
       </div>
     </div>
 
-    <!-- TAB 3: USERS & STAFF -->
+    <!-- TAB 4: USERS & STAFF -->
     <div class="tab-pane fade p-4" id="tab-users" role="tabpanel">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-bold"><i class="bi bi-people-fill text-primary"></i> Staff & User Roles Management</h4>
@@ -269,10 +325,10 @@
               <tr>
                 <td><strong>Hassan Tariq</strong></td>
                 <td>admin@urbanbistro.com</td>
-                <td><span class="badge bg-danger">Restaurant Admin</span></td>
-                <td>Clifton Flagship (DT-01)</td>
+                <td><span class="badge bg-danger">Super / Restaurant Admin</span></td>
+                <td>All Branches (Multi-Tenant DT-01)</td>
                 <td><span class="badge bg-success">Active</span></td>
-                <td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+                <td><button class="btn btn-sm btn-outline-secondary" onclick="editUserRole('Hassan Tariq')">Edit</button></td>
               </tr>
               <tr>
                 <td><strong>Bilal Ahmed</strong></td>
@@ -280,7 +336,7 @@
                 <td><span class="badge bg-warning text-dark">Branch Manager</span></td>
                 <td>Clifton Flagship (DT-01)</td>
                 <td><span class="badge bg-success">Active</span></td>
-                <td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+                <td><button class="btn btn-sm btn-outline-secondary" onclick="editUserRole('Bilal Ahmed')">Edit</button></td>
               </tr>
               <tr>
                 <td><strong>Zeeshan Ali</strong></td>
@@ -288,7 +344,7 @@
                 <td><span class="badge bg-info text-dark">Waiter</span></td>
                 <td>Clifton Flagship (DT-01)</td>
                 <td><span class="badge bg-success">Active</span></td>
-                <td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+                <td><button class="btn btn-sm btn-outline-secondary" onclick="editUserRole('Zeeshan Ali')">Edit</button></td>
               </tr>
               <tr>
                 <td><strong>Kashif Raza</strong></td>
@@ -296,7 +352,7 @@
                 <td><span class="badge bg-primary">Rider</span></td>
                 <td>Clifton Flagship (DT-01)</td>
                 <td><span class="badge bg-success">Active</span></td>
-                <td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+                <td><button class="btn btn-sm btn-outline-secondary" onclick="editUserRole('Kashif Raza')">Edit</button></td>
               </tr>
             </tbody>
           </table>
@@ -304,10 +360,10 @@
       </div>
     </div>
 
-    <!-- TAB 4: HR & ATTENDANCE -->
+    <!-- TAB 5: HR & ATTENDANCE -->
     <div class="tab-pane fade p-4" id="tab-hr" role="tabpanel">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold"><i class="bi bi-person-badge text-warning"></i> HR Onboarding & Biometric Attendance</h4>
+        <h4 class="fw-bold"><i class="bi bi-person-badge text-warning"></i> HR Onboarding & Attendance</h4>
         <div>
           <button class="btn btn-outline-info btn-sm me-2" onclick="clockStaffAttendance()"><i class="bi bi-clock-fill"></i> Manual Clock-In</button>
           <button class="btn btn-primary btn-sm" onclick="showAddEmployeeModal()"><i class="bi bi-plus-circle"></i> Onboard Employee</button>
@@ -357,7 +413,7 @@
       </div>
     </div>
 
-    <!-- TAB 5: PAYROLL -->
+    <!-- TAB 6: PAYROLL -->
     <div class="tab-pane fade p-4" id="tab-payroll" role="tabpanel">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-bold"><i class="bi bi-cash-coin text-success"></i> Automated Monthly Payroll Run</h4>
@@ -415,73 +471,99 @@
       </div>
     </div>
 
-    <!-- TAB 6: INVENTORY & VENDORS -->
+    <!-- TAB 7: INVENTORY & VENDORS -->
     <div class="tab-pane fade p-4" id="tab-inventory" role="tabpanel">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-bold"><i class="bi bi-boxes text-info"></i> Raw Ingredients & Recipe Depletion (BOM)</h4>
         <div>
-          <button class="btn btn-outline-light btn-sm me-2" onclick="showAddVendorModal()"><i class="bi bi-truck"></i> Add Vendor</button>
-          <button class="btn btn-primary btn-sm" onclick="showStockAdjustmentModal()"><i class="bi bi-plus-slash-minus"></i> Stock Adjustment</button>
+          <button class="btn btn-outline-light btn-sm me-2" onclick="openAddVendorModal()"><i class="bi bi-truck"></i> Add Vendor</button>
+          <button class="btn btn-primary btn-sm" onclick="openStockAdjustmentModal()"><i class="bi bi-plus-slash-minus"></i> Stock Adjustment</button>
         </div>
       </div>
-      <div class="metric-card">
-        <div class="table-responsive">
-          <table class="table table-dark table-hover align-middle">
-            <thead>
-              <tr class="text-secondary">
-                <th>Ingredient</th>
-                <th>Primary Vendor</th>
-                <th>Unit</th>
-                <th>Stock on Hand</th>
-                <th>Reorder Alert Level</th>
-                <th>Cost / Unit</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Angus Beef Patties</strong></td>
-                <td>Al-Madina Meat Suppliers</td>
-                <td>KG</td>
-                <td>42.5 KG</td>
-                <td>15.0 KG</td>
-                <td>PKR 2,400/KG</td>
-                <td><span class="badge bg-success">In Stock</span></td>
-              </tr>
-              <tr>
-                <td><strong>Brioche Burger Buns</strong></td>
-                <td>Artisan Bakers Co.</td>
-                <td>Pieces</td>
-                <td>120 Pcs</td>
-                <td>50 Pcs</td>
-                <td>PKR 65/Pc</td>
-                <td><span class="badge bg-success">In Stock</span></td>
-              </tr>
-              <tr>
-                <td><strong>Mozzarella Cheese</strong></td>
-                <td>Dairy Fresh Pakistan</td>
-                <td>KG</td>
-                <td>8.2 KG</td>
-                <td>10.0 KG</td>
-                <td>PKR 1,950/KG</td>
-                <td><span class="badge bg-danger">Low Stock Alert</span></td>
-              </tr>
-              <tr>
-                <td><strong>Fresh Mint & Lemons</strong></td>
-                <td>Sabzi Mandi Direct</td>
-                <td>KG</td>
-                <td>14.0 KG</td>
-                <td>5.0 KG</td>
-                <td>PKR 220/KG</td>
-                <td><span class="badge bg-success">In Stock</span></td>
-              </tr>
-            </tbody>
-          </table>
+
+      <div class="row g-3">
+        <div class="col-lg-8">
+          <div class="metric-card">
+            <h5 class="fw-bold mb-3"><i class="bi bi-box-seam text-primary"></i> Stock Levels on Hand</h5>
+            <div class="table-responsive">
+              <table class="table table-dark table-hover align-middle">
+                <thead>
+                  <tr class="text-secondary">
+                    <th>Ingredient</th>
+                    <th>Vendor</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Alert Level</th>
+                    <th>Unit Cost</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                  <tr>
+                    <td><strong>Angus Beef Patties</strong></td>
+                    <td>Al-Madina Meat Suppliers</td>
+                    <td>KG</td>
+                    <td id="qty-beef">42.5 KG</td>
+                    <td>15.0 KG</td>
+                    <td>PKR 2,400/KG</td>
+                    <td><span class="badge bg-success">In Stock</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Brioche Burger Buns</strong></td>
+                    <td>Artisan Bakers Co.</td>
+                    <td>Pieces</td>
+                    <td id="qty-buns">120 Pcs</td>
+                    <td>50 Pcs</td>
+                    <td>PKR 65/Pc</td>
+                    <td><span class="badge bg-success">In Stock</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Mozzarella Cheese</strong></td>
+                    <td>Dairy Fresh Pakistan</td>
+                    <td>KG</td>
+                    <td id="qty-cheese">8.2 KG</td>
+                    <td>10.0 KG</td>
+                    <td>PKR 1,950/KG</td>
+                    <td><span class="badge bg-danger">Low Stock Alert</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="metric-card">
+            <h5 class="fw-bold mb-3"><i class="bi bi-truck text-warning"></i> Registered Vendors</h5>
+            <ul class="list-group list-group-flush bg-transparent" id="vendorListGroup">
+              <li class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>Al-Madina Meat Suppliers</strong><br/>
+                  <small class="text-secondary">Meat & Poultry | +92 300 1234567</small>
+                </div>
+                <span class="badge bg-success">Active</span>
+              </li>
+              <li class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>Artisan Bakers Co.</strong><br/>
+                  <small class="text-secondary">Bakery & Buns | +92 321 7654321</small>
+                </div>
+                <span class="badge bg-success">Active</span>
+              </li>
+              <li class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>Dairy Fresh Pakistan</strong><br/>
+                  <small class="text-secondary">Cheese & Milk | +92 333 9988776</small>
+                </div>
+                <span class="badge bg-success">Active</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- TAB 7: ACCOUNTING -->
+    <!-- TAB 8: ACCOUNTING -->
     <div class="tab-pane fade p-4" id="tab-accounting" role="tabpanel">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-bold"><i class="bi bi-journal-bookmark-fill text-danger"></i> Double-Entry Accounting & Shift Register</h4>
@@ -544,6 +626,192 @@
 
   </div>
 
+  <!-- MODAL: ADD / EDIT PRODUCT -->
+  <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-white border border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title" id="productModalTitle"><i class="bi bi-plus-circle text-primary"></i> Add New Product</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editProdId" />
+          <div class="mb-3">
+            <label class="form-label">Product Name</label>
+            <input type="text" id="prodName" class="form-control bg-black text-white border-secondary" placeholder="e.g., Crispy Chicken Deluxe" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Category</label>
+            <select id="prodCategory" class="form-select bg-black text-white border-secondary">
+              <option value="Burgers">Burgers</option>
+              <option value="Pizzas">Pizzas</option>
+              <option value="Drinks">Drinks</option>
+              <option value="Desserts">Desserts</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Selling Price (PKR)</label>
+            <input type="number" id="prodPrice" class="form-control bg-black text-white border-secondary" placeholder="e.g., 1250" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea id="prodDesc" class="form-control bg-black text-white border-secondary" rows="2" placeholder="Ingredients and details"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Image URL (Unsplash or direct URL)</label>
+            <input type="text" id="prodImg" class="form-control bg-black text-white border-secondary" placeholder="https://images.unsplash.com/photo-..." />
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveProduct()"><i class="bi bi-check-lg"></i> Save Product</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD VENDOR -->
+  <div class="modal fade" id="vendorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-white border border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title"><i class="bi bi-truck text-warning"></i> Register New Vendor</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Vendor / Company Name</label>
+            <input type="text" id="vName" class="form-control bg-black text-white border-secondary" placeholder="e.g. Al-Fatah Beverage Supplies" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Supply Category</label>
+            <input type="text" id="vCategory" class="form-control bg-black text-white border-secondary" placeholder="e.g. Dairy / Meat / Dry Goods" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Contact Phone</label>
+            <input type="text" id="vPhone" class="form-control bg-black text-white border-secondary" placeholder="+92 300 1234567" />
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-warning text-dark" onclick="saveVendor()"><i class="bi bi-check-lg"></i> Register Vendor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: STOCK ADJUSTMENT -->
+  <div class="modal fade" id="stockModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-white border border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title"><i class="bi bi-plus-slash-minus text-info"></i> Adjust Stock Quantity</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Ingredient</label>
+            <select id="adjIngredient" class="form-select bg-black text-white border-secondary">
+              <option value="beef">Angus Beef Patties (KG)</option>
+              <option value="buns">Brioche Burger Buns (Pcs)</option>
+              <option value="cheese">Mozzarella Cheese (KG)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Adjustment Type</label>
+            <select id="adjType" class="form-select bg-black text-white border-secondary">
+              <option value="purchase">Purchase Inflow (+)</option>
+              <option value="waste">Kitchen Waste / Spoilage (-)</option>
+              <option value="audit">Physical Count Correction</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Quantity</label>
+            <input type="number" id="adjQty" class="form-control bg-black text-white border-secondary" placeholder="e.g., 10" />
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-info text-dark" onclick="saveStockAdjustment()"><i class="bi bi-check-lg"></i> Apply Adjustment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD STAFF USER -->
+  <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-white border border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title"><i class="bi bi-person-plus text-primary"></i> Create System User / Staff</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            <input type="text" id="uFullName" class="form-control bg-black text-white border-secondary" placeholder="e.g., Asad Khan" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="uEmail" class="form-control bg-black text-white border-secondary" placeholder="asad@urbanbistro.com" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Role</label>
+            <select id="uRole" class="form-select bg-black text-white border-secondary">
+              <option value="RestaurantAdmin">Restaurant Admin</option>
+              <option value="BranchManager">Branch Manager</option>
+              <option value="CounterPOS">Counter / POS Cashier</option>
+              <option value="Waiter">Waiter</option>
+              <option value="Rider">Delivery Rider</option>
+              <option value="HR">HR Specialist</option>
+              <option value="Accountant">Accountant</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Temporary Password</label>
+            <input type="password" id="uPass" class="form-control bg-black text-white border-secondary" value="Password123!" />
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveStaffUser()"><i class="bi bi-person-check"></i> Create User</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LOGIN / AUTHENTICATE -->
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-white border border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title"><i class="bi bi-shield-lock text-info"></i> API Authentication</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="loginEmail" class="form-control bg-black text-white border-secondary" value="admin@urbanbistro.com" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" id="loginPass" class="form-control bg-black text-white border-secondary" value="AdminPass123!" />
+          </div>
+          <div class="small text-secondary">
+            Default credentials:<br/>
+            Admin: <code>admin@urbanbistro.com</code> / <code>AdminPass123!</code><br/>
+            Waiter: <code>waiter@branch1.com</code> / <code>WaiterPass123!</code><br/>
+            Rider: <code>rider@branch1.com</code> / <code>RiderPass123!</code>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-info text-dark" onclick="performRealLogin()"><i class="bi bi-box-arrow-in-right"></i> Authenticate & Get JWT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Receipt / FBR Fiscal Modal -->
   <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -583,14 +851,8 @@
     const HEALTH_URL = `http://${serverHost}:5000/health`;
     document.getElementById("lnkSwagger").href = `http://${serverHost}:5000/swagger`;
 
-    let catalog = [];
-    let cart = [];
-    let selectedTable = "T-01";
-    let currentOrderType = "DineIn";
-    let paymentMethodSelected = "Card";
-    let currentCategory = "ALL";
-
-    const defaultCatalog = [
+    let activeRole = "SuperAdmin";
+    let catalog = [
       { id: "1", name: "Smoky Angus Beef Burger", category: "Burgers", price: 1450, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400", desc: "Prime Angus, smoked gouda, brioche" },
       { id: "2", name: "Crispy Chicken Burger", category: "Burgers", price: 1150, img: "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=400", desc: "Spiced chicken thigh, chipotle slaw" },
       { id: "3", name: "Truffle Margherita Pizza 12\"", category: "Pizzas", price: 1850, img: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400", desc: "Buffalo mozzarella, white truffle drizzle" },
@@ -599,11 +861,60 @@
       { id: "6", name: "Belgian Chocolate Shake", category: "Drinks", price: 650, img: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400", desc: "Dark cocoa, gelato, whipped cream" }
     ];
 
+    let cart = [];
+    let selectedTable = "T-01";
+    let currentOrderType = "DineIn";
+    let paymentMethodSelected = "Card";
+    let currentCategory = "ALL";
+
     async function init() {
-      catalog = defaultCatalog;
       renderTables();
       renderCatalog(catalog);
+      renderProductManagementTable();
       checkApiHealth();
+    }
+
+    // Role switcher
+    function switchRole(role, name, email) {
+      activeRole = role;
+      document.getElementById("activeUserName").textContent = name;
+      const badge = document.getElementById("activeRoleBadge");
+      badge.textContent = role;
+      
+      if (role === 'SuperAdmin') badge.className = "badge bg-danger ms-1";
+      else if (role === 'RestaurantAdmin') badge.className = "badge bg-warning text-dark ms-1";
+      else if (role === 'BranchManager') badge.className = "badge bg-info text-dark ms-1";
+      else badge.className = "badge bg-success ms-1";
+
+      alert(`Switched context to: ${role} (${name}). Permissions updated!`);
+    }
+
+    function openLoginModal() {
+      new bootstrap.Modal(document.getElementById('loginModal')).show();
+    }
+
+    async function performRealLogin() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPass').value;
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          alert(`Login successful! JWT Access Token received.\nUser: ${data.fullName || email}\nRoles: ${data.roles ? data.roles.join(', ') : 'Admin'}`);
+          bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+        } else {
+          const err = await res.json();
+          alert(`Login failed: ${err.error || 'Check credentials'}`);
+        }
+      } catch (e) {
+        alert("Backend connecting error. Make sure API is up on port 5000.");
+      }
     }
 
     async function checkApiHealth() {
@@ -633,6 +944,101 @@
       }
     }
 
+    // --- Product Management (Add, Edit, Delete) ---
+    function renderProductManagementTable() {
+      const tbody = document.getElementById("productManagementTable");
+      tbody.innerHTML = "";
+
+      catalog.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><img src="${p.img}" class="rounded-3" style="width: 50px; height: 50px; object-fit: cover;" /></td>
+          <td>
+            <strong>${p.name}</strong><br/>
+            <small class="text-secondary">${p.desc}</small>
+          </td>
+          <td><span class="badge bg-secondary">${p.category}</span></td>
+          <td class="fw-bold text-primary">PKR ${p.price.toFixed(2)}</td>
+          <td><span class="badge bg-success">Available</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline-info me-1" onclick="openEditProductModal('${p.id}')"><i class="bi bi-pencil-fill"></i> Edit</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct('${p.id}')"><i class="bi bi-trash-fill"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openAddProductModal() {
+      document.getElementById("productModalTitle").innerHTML = '<i class="bi bi-plus-circle text-primary"></i> Add New Product';
+      document.getElementById("editProdId").value = "";
+      document.getElementById("prodName").value = "";
+      document.getElementById("prodPrice").value = "";
+      document.getElementById("prodDesc").value = "";
+      document.getElementById("prodImg").value = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400";
+      new bootstrap.Modal(document.getElementById('productModal')).show();
+    }
+
+    function openEditProductModal(id) {
+      const prod = catalog.find(x => x.id === id);
+      if (!prod) return;
+
+      document.getElementById("productModalTitle").innerHTML = '<i class="bi bi-pencil text-warning"></i> Edit Product';
+      document.getElementById("editProdId").value = prod.id;
+      document.getElementById("prodName").value = prod.name;
+      document.getElementById("prodCategory").value = prod.category;
+      document.getElementById("prodPrice").value = prod.price;
+      document.getElementById("prodDesc").value = prod.desc;
+      document.getElementById("prodImg").value = prod.img;
+      new bootstrap.Modal(document.getElementById('productModal')).show();
+    }
+
+    function saveProduct() {
+      const id = document.getElementById("editProdId").value;
+      const name = document.getElementById("prodName").value.trim();
+      const category = document.getElementById("prodCategory").value;
+      const price = parseFloat(document.getElementById("prodPrice").value);
+      const desc = document.getElementById("prodDesc").value.trim();
+      const img = document.getElementById("prodImg").value.trim() || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400";
+
+      if (!name || isNaN(price)) {
+        alert("Please provide product name and valid price.");
+        return;
+      }
+
+      if (id) {
+        // Edit
+        const prod = catalog.find(x => x.id === id);
+        if (prod) {
+          prod.name = name;
+          prod.category = category;
+          prod.price = price;
+          prod.desc = desc;
+          prod.img = img;
+        }
+      } else {
+        // Add new
+        const newId = (catalog.length + 1).toString();
+        catalog.push({ id: newId, name, category, price, desc, img });
+      }
+
+      bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
+      renderProductManagementTable();
+      renderCatalog(catalog);
+      alert(`Product "${name}" saved successfully!`);
+    }
+
+    function deleteProduct(id) {
+      const prod = catalog.find(x => x.id === id);
+      if (!prod) return;
+      if (confirm(`Are you sure you want to remove "${prod.name}" from the menu?`)) {
+        catalog = catalog.filter(x => x.id !== id);
+        renderProductManagementTable();
+        renderCatalog(catalog);
+      }
+    }
+
+    // --- POS Display ---
     function renderTables() {
       const container = document.getElementById("tableList");
       container.innerHTML = "";
@@ -827,12 +1233,108 @@
       clearCart();
     }
 
-    // Modal helpers
+    // --- Vendors & Inventory Modals ---
+    function openAddVendorModal() {
+      document.getElementById("vName").value = "";
+      document.getElementById("vCategory").value = "";
+      document.getElementById("vPhone").value = "";
+      new bootstrap.Modal(document.getElementById('vendorModal')).show();
+    }
+
+    function saveVendor() {
+      const name = document.getElementById("vName").value.trim();
+      const cat = document.getElementById("vCategory").value.trim();
+      const phone = document.getElementById("vPhone").value.trim();
+
+      if (!name) {
+        alert("Please enter vendor name");
+        return;
+      }
+
+      const ul = document.getElementById("vendorListGroup");
+      const li = document.createElement("li");
+      li.className = "list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center";
+      li.innerHTML = `
+        <div>
+          <strong>${name}</strong><br/>
+          <small class="text-secondary">${cat} | ${phone}</small>
+        </div>
+        <span class="badge bg-success">Active</span>
+      `;
+      ul.appendChild(li);
+
+      bootstrap.Modal.getInstance(document.getElementById('vendorModal')).hide();
+      alert(`Vendor "${name}" registered successfully!`);
+    }
+
+    function openStockAdjustmentModal() {
+      document.getElementById("adjQty").value = "";
+      new bootstrap.Modal(document.getElementById('stockModal')).show();
+    }
+
+    function saveStockAdjustment() {
+      const ing = document.getElementById("adjIngredient").value;
+      const qty = parseFloat(document.getElementById("adjQty").value);
+      const type = document.getElementById("adjType").value;
+
+      if (isNaN(qty)) {
+        alert("Please enter a valid quantity");
+        return;
+      }
+
+      if (ing === "beef") {
+        const el = document.getElementById("qty-beef");
+        const current = parseFloat(el.textContent);
+        el.textContent = `${(current + (type === 'waste' ? -qty : qty)).toFixed(1)} KG`;
+      } else if (ing === "buns") {
+        const el = document.getElementById("qty-buns");
+        const current = parseFloat(el.textContent);
+        el.textContent = `${Math.round(current + (type === 'waste' ? -qty : qty))} Pcs`;
+      } else if (ing === "cheese") {
+        const el = document.getElementById("qty-cheese");
+        const current = parseFloat(el.textContent);
+        el.textContent = `${(current + (type === 'waste' ? -qty : qty)).toFixed(1)} KG`;
+      }
+
+      bootstrap.Modal.getInstance(document.getElementById('stockModal')).hide();
+      alert(`Stock adjustment of ${qty} applied!`);
+    }
+
     function showAddUserModal() {
-      const email = prompt("Enter new staff email address:");
-      if (!email) return;
-      const role = prompt("Enter Role (Manager, Waiter, Rider, HR, Accountant):", "Waiter");
-      alert(`User ${email} created with role: ${role}`);
+      document.getElementById("uFullName").value = "";
+      document.getElementById("uEmail").value = "";
+      new bootstrap.Modal(document.getElementById('userModal')).show();
+    }
+
+    function saveStaffUser() {
+      const name = document.getElementById("uFullName").value.trim();
+      const email = document.getElementById("uEmail").value.trim();
+      const role = document.getElementById("uRole").value;
+
+      if (!name || !email) {
+        alert("Please enter full name and email");
+        return;
+      }
+
+      const tbody = document.getElementById("userTableBody");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${name}</strong></td>
+        <td>${email}</td>
+        <td><span class="badge bg-info text-dark">${role}</span></td>
+        <td>Clifton Flagship (DT-01)</td>
+        <td><span class="badge bg-success">Active</span></td>
+        <td><button class="btn btn-sm btn-outline-secondary" onclick="editUserRole('${name}')">Edit</button></td>
+      `;
+      tbody.appendChild(tr);
+
+      bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+      alert(`Staff User "${name}" (${role}) created successfully!`);
+    }
+
+    function editUserRole(name) {
+      const newRole = prompt(`Update role for ${name} (Manager, Waiter, Rider, HR, Accountant):`, "BranchManager");
+      if (newRole) alert(`Role for ${name} updated to ${newRole}`);
     }
 
     function showAddEmployeeModal() {
@@ -849,17 +1351,6 @@
 
     function runPayrollCalculation() {
       alert("Payroll calculation completed for September 2026!\n3 employees processed.\nTotal Net Salary: PKR 200,700.\nMoved to accounting approval.");
-    }
-
-    function showAddVendorModal() {
-      const vendor = prompt("Enter Vendor / Supplier Name:");
-      if (vendor) alert(`Vendor "${vendor}" registered under active procurement agreements.`);
-    }
-
-    function showStockAdjustmentModal() {
-      const item = prompt("Enter ingredient name to adjust (e.g. Angus Beef):", "Angus Beef Patties");
-      const qty = prompt("Enter quantity adjustment (+/- KG):", "+10");
-      if (item && qty) alert(`Inventory adjustment recorded: ${qty} for ${item}.`);
     }
 
     function performXReport() {
