@@ -1205,6 +1205,7 @@
       renderInventoryTable();
       renderVendorsList();
       checkApiHealth();
+      setInterval(checkApiHealth, 6000);
     }
 
     // Role switcher
@@ -1323,15 +1324,26 @@
     }
 
     async function checkApiHealth() {
+      const statusEl = document.getElementById("apiStatus");
+      if (!statusEl) return;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
       try {
-        const res = await fetch(HEALTH_URL);
+        const res = await fetch(HEALTH_URL, { signal: controller.signal, mode: 'cors' });
+        clearTimeout(timeoutId);
         if (res.ok) {
-          document.getElementById("apiStatus").textContent = `Connected (${serverHost}:5000)`;
-          document.getElementById("apiStatus").className = "text-success";
+          statusEl.textContent = `Online (${serverHost}:5000)`;
+          statusEl.className = "text-success fw-bold";
+        } else {
+          statusEl.textContent = `HTTP ${res.status} (Starting...)`;
+          statusEl.className = "text-warning";
         }
       } catch (e) {
-        document.getElementById("apiStatus").textContent = "Backend Offline (Click Seed/Start)";
-        document.getElementById("apiStatus").className = "text-warning";
+        clearTimeout(timeoutId);
+        statusEl.textContent = `Offline (${serverHost}:5000)`;
+        statusEl.className = "text-danger fw-bold";
       }
     }
 
