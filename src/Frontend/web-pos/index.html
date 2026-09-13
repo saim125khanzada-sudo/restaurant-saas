@@ -257,8 +257,9 @@
                 <th>Product Image</th>
                 <th>Name & Description</th>
                 <th>Category</th>
-                <th>Selling Price (PKR)</th>
-                <th>Availability</th>
+                <th>Supplier / Vendor</th>
+                <th>Selling Price</th>
+                <th>Add-ons / Options</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -682,30 +683,59 @@
         </div>
         <div class="modal-body">
           <input type="hidden" id="editProdId" />
-          <div class="mb-3">
-            <label class="form-label">Product Name</label>
-            <input type="text" id="prodName" class="form-control bg-black text-white border-secondary" placeholder="e.g., Crispy Chicken Deluxe" />
+          <div class="row g-2 mb-3">
+            <div class="col-md-7">
+              <label class="form-label">Product Name</label>
+              <input type="text" id="prodName" class="form-control bg-black text-white border-secondary" placeholder="e.g., Crispy Chicken Deluxe" />
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Category</label>
+              <select id="prodCategory" class="form-select bg-black text-white border-secondary">
+                <option value="Burgers">Burgers</option>
+                <option value="Pizzas">Pizzas</option>
+                <option value="Drinks">Drinks</option>
+                <option value="Desserts">Desserts</option>
+              </select>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Category</label>
-            <select id="prodCategory" class="form-select bg-black text-white border-secondary">
-              <option value="Burgers">Burgers</option>
-              <option value="Pizzas">Pizzas</option>
-              <option value="Drinks">Drinks</option>
-              <option value="Desserts">Desserts</option>
-            </select>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Selling Price (PKR)</label>
+              <input type="number" id="prodPrice" class="form-control bg-black text-white border-secondary" placeholder="e.g., 1250" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Primary Vendor / Supplier</label>
+              <select id="prodVendor" class="form-select bg-black text-white border-secondary">
+                <!-- Dynamically populated from vendors list -->
+              </select>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Selling Price (PKR)</label>
-            <input type="number" id="prodPrice" class="form-control bg-black text-white border-secondary" placeholder="e.g., 1250" />
-          </div>
+
           <div class="mb-3">
             <label class="form-label">Description</label>
-            <textarea id="prodDesc" class="form-control bg-black text-white border-secondary" rows="2" placeholder="Ingredients and details"></textarea>
+            <textarea id="prodDesc" class="form-control bg-black text-white border-secondary" rows="2" placeholder="Ingredients, recipe details, and toppings"></textarea>
           </div>
+
           <div class="mb-3">
-            <label class="form-label">Image URL (Unsplash or direct URL)</label>
+            <label class="form-label">Image URL</label>
             <input type="text" id="prodImg" class="form-control bg-black text-white border-secondary" placeholder="https://images.unsplash.com/photo-..." />
+          </div>
+
+          <!-- Product Add-ons / Customizations Section -->
+          <div class="p-3 bg-black rounded-3 border border-secondary mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-warning small fw-bold text-uppercase"><i class="bi bi-plus-square-dotted"></i> Optional Add-ons / Extras</span>
+              <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2" style="font-size:0.75rem;" onclick="addAddonRow()">
+                <i class="bi bi-plus-lg"></i> Add Extra Option
+              </button>
+            </div>
+            <div class="small text-secondary mb-2" style="font-size:0.75rem;">
+              Allow customers to choose extras at POS (e.g. Extra Cheese +PKR 150, Dip Sauce +PKR 80, Double Patty +PKR 450).
+            </div>
+            <div id="addonRowsContainer" class="d-flex flex-column gap-2">
+              <!-- Dynamically generated addon rows -->
+            </div>
           </div>
         </div>
         <div class="modal-footer border-secondary">
@@ -840,6 +870,114 @@
     </div>
   </div>
 
+  <!-- MODAL: ADDONS SELECTION (POS ORDER TIME) -->
+  <div class="modal fade" id="addonsSelectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border border-secondary shadow-lg">
+        <div class="modal-header border-secondary">
+          <div>
+            <h5 class="modal-title fw-bold" id="addonSelectModalTitle"><i class="bi bi-stars text-warning"></i> Customize Dish</h5>
+            <div class="text-secondary small" id="addonSelectModalSubtitle">Choose optional add-ons & extras</div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-3">
+          <input type="hidden" id="pendingDishId" />
+          <div class="d-flex justify-content-between align-items-center p-2 rounded bg-black border border-secondary mb-3">
+            <div>
+              <strong id="pendingDishName" class="text-white">Dish Name</strong>
+              <div class="text-secondary small" id="pendingDishVendor">Vendor</div>
+            </div>
+            <span class="badge bg-primary fs-6" id="pendingDishBasePrice">PKR 0.00</span>
+          </div>
+
+          <label class="form-label text-warning small fw-bold text-uppercase"><i class="bi bi-plus-circle"></i> Available Add-ons:</label>
+          <div id="addonCheckboxesList" class="d-flex flex-column gap-2 mb-3">
+            <!-- Dynamically populated checkboxes -->
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary">
+            <span class="fw-bold">Calculated Price per Unit:</span>
+            <span id="calculatedDishTotal" class="fw-bold text-success fs-5">PKR 0.00</span>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary fw-bold px-4" onclick="confirmAddonSelection()"><i class="bi bi-cart-plus-fill"></i> Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MULTIPLE PRODUCTS ASSIGNMENT FOR ONE VENDOR -->
+  <div class="modal fade" id="vendorProductsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content bg-dark text-white border border-secondary">
+        <div class="modal-header border-secondary">
+          <div>
+            <h5 class="modal-title fw-bold" id="vendorProdModalTitle"><i class="bi bi-boxes text-warning"></i> Manage Products Supplied by Vendor</h5>
+            <div class="text-secondary small" id="vendorProdModalSubtitle">Bulk assign multiple products to this vendor</div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-3">
+          <input type="hidden" id="vProdTargetVendorId" />
+          
+          <div class="p-3 bg-black rounded-3 border border-secondary mb-3">
+            <h6 class="fw-bold text-info mb-1"><i class="bi bi-plus-circle-fill"></i> Quick Add New Product for this Vendor</h6>
+            <div class="row g-2 align-items-end">
+              <div class="col-md-4">
+                <label class="small text-secondary">Product / Item Name</label>
+                <input type="text" id="vpNewName" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="e.g. Garlic Herb Butter Steak" />
+              </div>
+              <div class="col-md-3">
+                <label class="small text-secondary">Category</label>
+                <select id="vpNewCategory" class="form-select form-select-sm bg-dark text-white border-secondary">
+                  <option value="Burgers">Burgers</option>
+                  <option value="Pizzas">Pizzas</option>
+                  <option value="Drinks">Drinks</option>
+                  <option value="Steaks">Steaks</option>
+                  <option value="Desserts">Desserts</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="small text-secondary">Price (PKR)</label>
+                <input type="number" id="vpNewPrice" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="e.g. 1850" />
+              </div>
+              <div class="col-md-2">
+                <button type="button" class="btn btn-sm btn-primary w-100" onclick="quickAddProductForVendor()">
+                  <i class="bi bi-plus"></i> Add
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <h6 class="fw-bold text-white mb-2"><i class="bi bi-check2-square text-primary"></i> Select Existing Catalog Products for this Vendor:</h6>
+          <div class="table-responsive border border-secondary rounded-3" style="max-height: 280px; overflow-y: auto;">
+            <table class="table table-dark table-hover align-middle mb-0">
+              <thead>
+                <tr class="text-secondary small">
+                  <th style="width:40px;">Select</th>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Current Price</th>
+                  <th>Currently Supplied By</th>
+                </tr>
+              </thead>
+              <tbody id="vendorProductsChecklistTable">
+                <!-- Dynamically populated with check boxes for all catalog products -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-warning text-dark fw-bold" onclick="saveVendorProductsMapping()"><i class="bi bi-check-lg"></i> Save Products for this Vendor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: ADD STAFF USER -->
   <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -955,12 +1093,91 @@
 
     let activeRole = "SuperAdmin";
     let catalog = [
-      { id: "1", name: "Smoky Angus Beef Burger", category: "Burgers", price: 1450, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400", desc: "Prime Angus, smoked gouda, brioche" },
-      { id: "2", name: "Crispy Chicken Burger", category: "Burgers", price: 1150, img: "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=400", desc: "Spiced chicken thigh, chipotle slaw" },
-      { id: "3", name: "Truffle Margherita Pizza 12\"", category: "Pizzas", price: 1850, img: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400", desc: "Buffalo mozzarella, white truffle drizzle" },
-      { id: "4", name: "Spicy Pepperoni & Jalapeno", category: "Pizzas", price: 2100, img: "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=400", desc: "Double beef pepperoni, hot honey" },
-      { id: "5", name: "Mint Lemonade Fizz", category: "Drinks", price: 450, img: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400", desc: "Fresh mint, zesty lemon, crushed ice" },
-      { id: "6", name: "Belgian Chocolate Shake", category: "Drinks", price: 650, img: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400", desc: "Dark cocoa, gelato, whipped cream" }
+      { 
+        id: "1", 
+        name: "Smoky Angus Beef Burger", 
+        category: "Burgers", 
+        price: 1450, 
+        vendor: "Al-Madina Meat Suppliers",
+        img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400", 
+        desc: "Prime Angus, smoked gouda, brioche",
+        addons: [
+          { name: "Extra Smoked Gouda", price: 180 },
+          { name: "Crispy Beef Bacon Strip", price: 220 },
+          { name: "Double Angus Patty (150g)", price: 550 },
+          { name: "Truffle Mayo Dip", price: 120 }
+        ]
+      },
+      { 
+        id: "2", 
+        name: "Crispy Chicken Burger", 
+        category: "Burgers", 
+        price: 1150, 
+        vendor: "Al-Madina Meat Suppliers",
+        img: "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=400", 
+        desc: "Spiced chicken thigh, chipotle slaw",
+        addons: [
+          { name: "Cheddar Melt Cheese", price: 150 },
+          { name: "Spicy Jalapeno Relish", price: 90 },
+          { name: "Extra Fried Chicken Patty", price: 420 },
+          { name: "Garlic Ranch Dip", price: 100 }
+        ]
+      },
+      { 
+        id: "3", 
+        name: "Truffle Margherita Pizza 12\"", 
+        category: "Pizzas", 
+        price: 1850, 
+        vendor: "Dairy Fresh Pakistan",
+        img: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400", 
+        desc: "Buffalo mozzarella, white truffle drizzle",
+        addons: [
+          { name: "Stuffed Crust Cheese", price: 280 },
+          { name: "Fresh Basil & Sun-dried Tomato", price: 140 },
+          { name: "Extra Buffalo Mozzarella", price: 250 }
+        ]
+      },
+      { 
+        id: "4", 
+        name: "Spicy Pepperoni & Jalapeno", 
+        category: "Pizzas", 
+        price: 2100, 
+        vendor: "Dairy Fresh Pakistan",
+        img: "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=400", 
+        desc: "Double beef pepperoni, hot honey",
+        addons: [
+          { name: "Extra Beef Pepperoni", price: 320 },
+          { name: "Hot Honey Drizzle", price: 120 },
+          { name: "Stuffed Cheese Crust", price: 280 }
+        ]
+      },
+      { 
+        id: "5", 
+        name: "Mint Lemonade Fizz", 
+        category: "Drinks", 
+        price: 450, 
+        vendor: "Artisan Bakers Co.",
+        img: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400", 
+        desc: "Fresh mint, zesty lemon, crushed ice",
+        addons: [
+          { name: "Extra Chia Seeds", price: 60 },
+          { name: "Peach Flavour Shot", price: 90 }
+        ]
+      },
+      { 
+        id: "6", 
+        name: "Belgian Chocolate Shake", 
+        category: "Drinks", 
+        price: 650, 
+        vendor: "Dairy Fresh Pakistan",
+        img: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400", 
+        desc: "Dark cocoa, gelato, whipped cream",
+        addons: [
+          { name: "Whipped Cream Cloud", price: 90 },
+          { name: "Hazelnut Syrup", price: 120 },
+          { name: "Crushed Oreo Crumble", price: 110 }
+        ]
+      }
     ];
 
     let vendors = [
@@ -1132,13 +1349,36 @@
       }
     }
 
-    // --- Product Management (Add, Edit, Delete) ---
+    // --- Product Management (Add, Edit, Delete, Add-ons & Vendors) ---
+    function updateProductVendorDropdown() {
+      const select = document.getElementById("prodVendor");
+      if (!select) return;
+      select.innerHTML = "";
+      vendors.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.category})`;
+        select.appendChild(opt);
+      });
+      if (vendors.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "General Kitchen / In-House";
+        opt.textContent = "General Kitchen / In-House";
+        select.appendChild(opt);
+      }
+    }
+
     function renderProductManagementTable() {
       const tbody = document.getElementById("productManagementTable");
+      if (!tbody) return;
       tbody.innerHTML = "";
 
       catalog.forEach(p => {
         const tr = document.createElement("tr");
+        const addonsSummary = (p.addons && p.addons.length > 0)
+          ? `<span class="badge bg-warning text-dark"><i class="bi bi-stars"></i> ${p.addons.length} Add-on${p.addons.length > 1 ? 's' : ''}</span>`
+          : `<span class="badge bg-secondary text-light">No Add-ons</span>`;
+
         tr.innerHTML = `
           <td><img src="${p.img}" class="rounded-3" style="width: 50px; height: 50px; object-fit: cover;" /></td>
           <td>
@@ -1146,15 +1386,36 @@
             <small class="text-secondary">${p.desc}</small>
           </td>
           <td><span class="badge bg-secondary">${p.category}</span></td>
+          <td><span class="badge bg-info text-dark"><i class="bi bi-truck"></i> ${p.vendor || 'In-House'}</span></td>
           <td class="fw-bold text-primary">PKR ${p.price.toFixed(2)}</td>
-          <td><span class="badge bg-success">Available</span></td>
+          <td>${addonsSummary}</td>
           <td>
-            <button class="btn btn-sm btn-outline-info me-1" onclick="openEditProductModal('${p.id}')"><i class="bi bi-pencil-fill"></i> Edit</button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct('${p.id}')"><i class="bi bi-trash-fill"></i></button>
+            <div class="btn-group btn-group-sm" role="group">
+              <button class="btn btn-outline-info" onclick="openEditProductModal('${p.id}')"><i class="bi bi-pencil-fill"></i> Edit</button>
+              <button class="btn btn-outline-danger" onclick="deleteProduct('${p.id}')"><i class="bi bi-trash-fill"></i></button>
+            </div>
           </td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    function addAddonRow(name = "", price = "") {
+      const container = document.getElementById("addonRowsContainer");
+      if (!container) return;
+      const rowId = "addon_row_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+      const div = document.createElement("div");
+      div.id = rowId;
+      div.className = "d-flex align-items-center gap-2";
+      div.innerHTML = `
+        <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary addon-name-input" placeholder="Add-on Name (e.g. Extra Cheese)" value="${name.replace(/"/g, '&quot;')}" />
+        <div class="input-group input-group-sm" style="max-width: 140px;">
+          <span class="input-group-text bg-secondary border-secondary text-white">+PKR</span>
+          <input type="number" class="form-control bg-dark text-white border-secondary addon-price-input" placeholder="Price" value="${price}" />
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="document.getElementById('${rowId}').remove()"><i class="bi bi-x-lg"></i></button>
+      `;
+      container.appendChild(div);
     }
 
     function openAddProductModal() {
@@ -1164,6 +1425,12 @@
       document.getElementById("prodPrice").value = "";
       document.getElementById("prodDesc").value = "";
       document.getElementById("prodImg").value = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400";
+      
+      updateProductVendorDropdown();
+      document.getElementById("addonRowsContainer").innerHTML = "";
+      // Add one default blank addon row
+      addAddonRow("Extra Cheese", 150);
+
       new bootstrap.Modal(document.getElementById('productModal')).show();
     }
 
@@ -1171,13 +1438,26 @@
       const prod = catalog.find(x => x.id === id);
       if (!prod) return;
 
-      document.getElementById("productModalTitle").innerHTML = '<i class="bi bi-pencil text-warning"></i> Edit Product';
+      document.getElementById("productModalTitle").innerHTML = '<i class="bi bi-pencil text-warning"></i> Edit Product & Add-ons';
       document.getElementById("editProdId").value = prod.id;
       document.getElementById("prodName").value = prod.name;
       document.getElementById("prodCategory").value = prod.category;
       document.getElementById("prodPrice").value = prod.price;
       document.getElementById("prodDesc").value = prod.desc;
       document.getElementById("prodImg").value = prod.img;
+
+      updateProductVendorDropdown();
+      if (document.getElementById("prodVendor")) {
+        document.getElementById("prodVendor").value = prod.vendor || (vendors[0] ? vendors[0].name : "");
+      }
+
+      // Populate existing add-ons
+      const container = document.getElementById("addonRowsContainer");
+      container.innerHTML = "";
+      if (prod.addons && prod.addons.length > 0) {
+        prod.addons.forEach(a => addAddonRow(a.name, a.price));
+      }
+
       new bootstrap.Modal(document.getElementById('productModal')).show();
     }
 
@@ -1186,13 +1466,25 @@
       const name = document.getElementById("prodName").value.trim();
       const category = document.getElementById("prodCategory").value;
       const price = parseFloat(document.getElementById("prodPrice").value);
+      const vendor = document.getElementById("prodVendor") ? document.getElementById("prodVendor").value : "In-House";
       const desc = document.getElementById("prodDesc").value.trim();
       const img = document.getElementById("prodImg").value.trim() || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400";
 
       if (!name || isNaN(price)) {
-        alert("Please provide product name and valid price.");
+        alert("Please provide product name and valid selling price.");
         return;
       }
+
+      // Collect Add-ons
+      const addonRows = document.querySelectorAll("#addonRowsContainer > div");
+      const collectedAddons = [];
+      addonRows.forEach(row => {
+        const aName = row.querySelector(".addon-name-input").value.trim();
+        const aPrice = parseFloat(row.querySelector(".addon-price-input").value);
+        if (aName && !isNaN(aPrice)) {
+          collectedAddons.push({ name: aName, price: aPrice });
+        }
+      });
 
       if (id) {
         // Edit
@@ -1201,19 +1493,22 @@
           prod.name = name;
           prod.category = category;
           prod.price = price;
+          prod.vendor = vendor;
           prod.desc = desc;
           prod.img = img;
+          prod.addons = collectedAddons;
         }
       } else {
         // Add new
         const newId = (catalog.length + 1).toString();
-        catalog.push({ id: newId, name, category, price, desc, img });
+        catalog.push({ id: newId, name, category, price, vendor, desc, img, addons: collectedAddons });
       }
 
       bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
       renderProductManagementTable();
       renderCatalog(catalog);
-      alert(`Product "${name}" saved successfully!`);
+      renderVendorsList(); // refresh product count per vendor
+      alert(`Product "${name}" saved with ${collectedAddons.length} add-ons!`);
     }
 
     function deleteProduct(id) {
@@ -1223,59 +1518,37 @@
         catalog = catalog.filter(x => x.id !== id);
         renderProductManagementTable();
         renderCatalog(catalog);
+        renderVendorsList();
       }
     }
 
-    // --- POS Display ---
-    function renderTables() {
-      const container = document.getElementById("tableList");
-      container.innerHTML = "";
-      for (let i = 1; i <= 8; i++) {
-        const tName = `T-0${i}`;
-        const pill = document.createElement("span");
-        pill.className = `table-pill ${selectedTable === tName ? "active" : ""}`;
-        pill.innerHTML = `<i class="bi bi-circle-fill text-success me-1" style="font-size:0.5rem;"></i>${tName}`;
-        pill.onclick = () => {
-          selectedTable = tName;
-          document.getElementById("selectedTableLabel").textContent = `Dine-In: ${tName}`;
-          renderTables();
-        };
-        container.appendChild(pill);
-      }
-    }
-
-    function filterCategory(cat) {
-      currentCategory = cat;
-      const filtered = cat === "ALL" ? catalog : catalog.filter(x => x.category === cat);
-      renderCatalog(filtered);
-      
-      const buttons = document.querySelectorAll(".category-btn");
-      buttons.forEach(b => {
-        if (b.textContent.trim() === cat || (cat === "ALL" && b.textContent.includes("All"))) {
-          b.classList.add("active");
-        } else {
-          b.classList.remove("active");
-        }
-      });
-    }
-
+    // --- POS Catalog & Add-ons Selection at Order Time ---
     function renderCatalog(items) {
       const grid = document.getElementById("productGrid");
       grid.innerHTML = "";
       items.forEach(dish => {
         const col = document.createElement("div");
         col.className = "col-md-6 col-xl-4";
+        const hasAddons = dish.addons && dish.addons.length > 0;
+        const addonBadge = hasAddons
+          ? `<span class="badge bg-warning text-dark small ms-1"><i class="bi bi-stars"></i> +${dish.addons.length} Extras</span>`
+          : ``;
+
         col.innerHTML = `
-          <div class="dish-card h-100" onclick="addToCart('${dish.id}', '${dish.name.replace(/'/g, "\\'")}', ${dish.price})">
+          <div class="dish-card h-100" onclick="handleDishClick('${dish.id}')">
             <img src="${dish.img}" class="dish-img" alt="${dish.name}" />
             <div class="p-3">
               <div class="d-flex justify-content-between align-items-start mb-1">
                 <h6 class="fw-bold mb-0 text-white">${dish.name}</h6>
               </div>
+              <div class="d-flex align-items-center gap-1 mb-1">
+                <span class="badge bg-secondary" style="font-size:0.65rem;">${dish.vendor || 'In-House'}</span>
+                ${addonBadge}
+              </div>
               <p class="text-secondary small mb-2" style="font-size:0.75rem;">${dish.desc}</p>
               <div class="d-flex justify-content-between align-items-center">
                 <span class="text-primary fw-bold">PKR ${dish.price.toFixed(2)}</span>
-                <button class="btn btn-sm btn-primary rounded-circle"><i class="bi bi-plus"></i></button>
+                <button class="btn btn-sm btn-primary rounded-circle" title="Add to Order"><i class="bi bi-plus"></i></button>
               </div>
             </div>
           </div>
@@ -1284,22 +1557,113 @@
       });
     }
 
-    function addToCart(id, name, price) {
-      const existing = cart.find(x => x.id === id);
+    function handleDishClick(dishId) {
+      const dish = catalog.find(x => x.id === dishId);
+      if (!dish) return;
+
+      if (dish.addons && dish.addons.length > 0) {
+        // Show Addons Selection Modal
+        openAddonSelectModal(dish);
+      } else {
+        // Directly add standard dish without extras
+        addToCart(dish.id, dish.name, dish.price, []);
+      }
+    }
+
+    function openAddonSelectModal(dish) {
+      document.getElementById("pendingDishId").value = dish.id;
+      document.getElementById("pendingDishName").textContent = dish.name;
+      document.getElementById("pendingDishVendor").textContent = `Supplier: ${dish.vendor || 'In-House'}`;
+      document.getElementById("pendingDishBasePrice").textContent = `Base: PKR ${dish.price.toFixed(2)}`;
+
+      const listContainer = document.getElementById("addonCheckboxesList");
+      listContainer.innerHTML = "";
+
+      dish.addons.forEach((addon, idx) => {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "form-check p-2 rounded bg-black border border-secondary border-opacity-50 d-flex justify-content-between align-items-center";
+        itemDiv.innerHTML = `
+          <div class="d-flex align-items-center gap-2">
+            <input class="form-check-input ms-0 pos-addon-checkbox" type="checkbox" value="${idx}" id="chk_addon_${idx}" onchange="recalculateModalDishTotal()">
+            <label class="form-check-label text-white small fw-bold" for="chk_addon_${idx}">
+              ${addon.name}
+            </label>
+          </div>
+          <span class="badge bg-warning text-dark fw-bold">+ PKR ${addon.price.toFixed(2)}</span>
+        `;
+        listContainer.appendChild(itemDiv);
+      });
+
+      recalculateModalDishTotal();
+      new bootstrap.Modal(document.getElementById('addonsSelectModal')).show();
+    }
+
+    function recalculateModalDishTotal() {
+      const dishId = document.getElementById("pendingDishId").value;
+      const dish = catalog.find(x => x.id === dishId);
+      if (!dish) return;
+
+      let total = dish.price;
+      const checkedBoxes = document.querySelectorAll(".pos-addon-checkbox:checked");
+      checkedBoxes.forEach(chk => {
+        const idx = parseInt(chk.value);
+        if (dish.addons[idx]) {
+          total += dish.addons[idx].price;
+        }
+      });
+
+      document.getElementById("calculatedDishTotal").textContent = `PKR ${total.toFixed(2)}`;
+    }
+
+    function confirmAddonSelection() {
+      const dishId = document.getElementById("pendingDishId").value;
+      const dish = catalog.find(x => x.id === dishId);
+      if (!dish) return;
+
+      const selectedAddons = [];
+      const checkedBoxes = document.querySelectorAll(".pos-addon-checkbox:checked");
+      let addedPrice = 0;
+
+      checkedBoxes.forEach(chk => {
+        const idx = parseInt(chk.value);
+        if (dish.addons[idx]) {
+          selectedAddons.push(dish.addons[idx]);
+          addedPrice += dish.addons[idx].price;
+        }
+      });
+
+      const finalPrice = dish.price + addedPrice;
+      addToCart(dish.id, dish.name, finalPrice, selectedAddons);
+      bootstrap.Modal.getInstance(document.getElementById('addonsSelectModal')).hide();
+    }
+
+    function addToCart(baseId, name, price, selectedAddons = []) {
+      // Unique key based on base item + chosen addons
+      const addonKey = selectedAddons.map(a => a.name).sort().join("|");
+      const cartKey = `${baseId}_${addonKey}`;
+
+      const existing = cart.find(x => x.cartKey === cartKey);
       if (existing) {
         existing.qty += 1;
       } else {
-        cart.push({ id, name, price, qty: 1 });
+        cart.push({ 
+          cartKey,
+          id: baseId, 
+          name, 
+          price, 
+          qty: 1,
+          addons: selectedAddons
+        });
       }
       updateCartUI();
     }
 
-    function changeQty(id, delta) {
-      const item = cart.find(x => x.id === id);
+    function changeQty(cartKey, delta) {
+      const item = cart.find(x => x.cartKey === cartKey);
       if (!item) return;
       item.qty += delta;
       if (item.qty <= 0) {
-        cart = cart.filter(x => x.id !== id);
+        cart = cart.filter(x => x.cartKey !== cartKey);
       }
       updateCartUI();
     }
@@ -1336,16 +1700,22 @@
         subtotal += itemTotal;
         const div = document.createElement("div");
         div.className = "cart-item";
+
+        const addonsHtml = (item.addons && item.addons.length > 0)
+          ? `<div class="mt-1">${item.addons.map(a => `<span class="badge bg-warning bg-opacity-25 text-warning me-1" style="font-size:0.65rem;">+ ${a.name} (PKR ${a.price})</span>`).join("")}</div>`
+          : ``;
+
         div.innerHTML = `
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <div class="fw-bold text-white small">${item.name}</div>
               <div class="text-secondary small">PKR ${item.price} x ${item.qty}</div>
+              ${addonsHtml}
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-outline-secondary btn-qty" onclick="changeQty('${item.id}', -1)">-</button>
+              <button class="btn btn-sm btn-outline-secondary btn-qty" onclick="changeQty('${item.cartKey}', -1)">-</button>
               <span class="fw-bold">${item.qty}</span>
-              <button class="btn btn-sm btn-outline-primary btn-qty" onclick="changeQty('${item.id}', 1)">+</button>
+              <button class="btn btn-sm btn-outline-primary btn-qty" onclick="changeQty('${item.cartKey}', 1)">+</button>
               <span class="fw-bold text-primary small ms-2">PKR ${itemTotal.toFixed(2)}</span>
             </div>
           </div>
@@ -1444,28 +1814,41 @@
       }
 
       vendors.forEach(v => {
+        // Count products supplied by this vendor
+        const prodCount = catalog.filter(p => p.vendor === v.name).length;
+        const ingCount = ingredients.filter(i => i.vendor === v.name).length;
+
         const li = document.createElement("li");
-        li.className = "list-group-item bg-transparent text-white px-0 py-3 d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25";
+        li.className = "list-group-item bg-transparent text-white px-0 py-3 border-bottom border-secondary border-opacity-25";
         li.innerHTML = `
-          <div>
-            <strong>${v.name}</strong><br/>
-            <small class="text-secondary">${v.category} | ${v.phone}</small>
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <strong>${v.name}</strong><br/>
+              <small class="text-secondary">${v.category} | ${v.phone}</small>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+              <span class="badge bg-success me-1">Active</span>
+              <button class="btn btn-sm btn-outline-info py-0 px-2" title="Edit Vendor Details" onclick="openEditVendorModal('${v.id}')">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger py-0 px-2" title="Remove Vendor" onclick="deleteVendor('${v.id}')">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </div>
           </div>
-          <div class="d-flex align-items-center gap-1">
-            <span class="badge bg-success me-1">Active</span>
-            <button class="btn btn-sm btn-outline-info py-0 px-2" title="Edit Vendor" onclick="openEditVendorModal('${v.id}')">
-              <i class="bi bi-pencil-fill"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-danger py-0 px-2" title="Remove Vendor" onclick="deleteVendor('${v.id}')">
-              <i class="bi bi-trash-fill"></i>
+          <div class="d-flex justify-content-between align-items-center bg-black bg-opacity-50 p-2 rounded">
+            <span class="small text-secondary"><i class="bi bi-box-seam text-warning"></i> Supplies <strong>${prodCount}</strong> menu dishes, <strong>${ingCount}</strong> raw items</span>
+            <button class="btn btn-sm btn-outline-warning py-0 px-2" style="font-size:0.75rem;" onclick="openVendorProductsModal('${v.id}')">
+              <i class="bi bi-plus-square-fill"></i> Manage Products (${prodCount})
             </button>
           </div>
         `;
         ul.appendChild(li);
       });
 
-      // Also update ingredient and adjustment vendor dropdowns
+      // Also update ingredient and product vendor dropdowns
       updateIngredientVendorDropdown();
+      updateProductVendorDropdown();
     }
 
     function openAddVendorModal() {
@@ -1531,6 +1914,116 @@
         vendors = vendors.filter(x => x.id !== id);
         renderVendorsList();
       }
+    }
+
+    // --- Manage Multiple Products for One Vendor ---
+    function openVendorProductsModal(vendorId) {
+      const v = vendors.find(x => x.id === vendorId);
+      if (!v) return;
+
+      document.getElementById("vProdTargetVendorId").value = v.id;
+      document.getElementById("vendorProdModalTitle").innerHTML = `<i class="bi bi-boxes text-warning"></i> Products Supplied by "${v.name}"`;
+      document.getElementById("vendorProdModalSubtitle").textContent = `Supply Category: ${v.category} | Batch assign multiple products to this vendor`;
+
+      // Clear quick-add fields
+      document.getElementById("vpNewName").value = "";
+      document.getElementById("vpNewPrice").value = "";
+
+      renderVendorProductsChecklist(v.name);
+      new bootstrap.Modal(document.getElementById('vendorProductsModal')).show();
+    }
+
+    function renderVendorProductsChecklist(vendorName) {
+      const tbody = document.getElementById("vendorProductsChecklistTable");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      catalog.forEach(p => {
+        const isSupplied = (p.vendor === vendorName);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <input class="form-check-input vp-catalog-checkbox" type="checkbox" value="${p.id}" ${isSupplied ? 'checked' : ''}>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <img src="${p.img}" class="rounded" style="width: 32px; height: 32px; object-fit: cover;" />
+              <strong>${p.name}</strong>
+            </div>
+          </td>
+          <td><span class="badge bg-secondary">${p.category}</span></td>
+          <td class="text-primary fw-bold">PKR ${p.price.toFixed(2)}</td>
+          <td>
+            ${isSupplied 
+              ? `<span class="badge bg-success"><i class="bi bi-check-circle"></i> Assigned to this Vendor</span>`
+              : `<span class="text-secondary small">${p.vendor || 'In-House'}</span>`}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function quickAddProductForVendor() {
+      const vendorId = document.getElementById("vProdTargetVendorId").value;
+      const v = vendors.find(x => x.id === vendorId);
+      if (!v) return;
+
+      const name = document.getElementById("vpNewName").value.trim();
+      const category = document.getElementById("vpNewCategory").value;
+      const price = parseFloat(document.getElementById("vpNewPrice").value);
+
+      if (!name || isNaN(price)) {
+        alert("Please enter both product name and a valid selling price.");
+        return;
+      }
+
+      const newId = (catalog.length + 1).toString();
+      catalog.push({
+        id: newId,
+        name,
+        category,
+        price,
+        vendor: v.name,
+        desc: `Freshly sourced from ${v.name}`,
+        img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
+        addons: [
+          { name: "Extra Portion / Topping", price: 150 }
+        ]
+      });
+
+      document.getElementById("vpNewName").value = "";
+      document.getElementById("vpNewPrice").value = "";
+
+      renderVendorProductsChecklist(v.name);
+      renderProductManagementTable();
+      renderCatalog(catalog);
+      renderVendorsList();
+      alert(`Product "${name}" added and assigned to "${v.name}"!`);
+    }
+
+    function saveVendorProductsMapping() {
+      const vendorId = document.getElementById("vProdTargetVendorId").value;
+      const v = vendors.find(x => x.id === vendorId);
+      if (!v) return;
+
+      const checkedCheckboxes = document.querySelectorAll(".vp-catalog-checkbox:checked");
+      const selectedProductIds = Array.from(checkedCheckboxes).map(c => c.value);
+
+      // Assign selected products to this vendor
+      catalog.forEach(p => {
+        if (selectedProductIds.includes(p.id)) {
+          p.vendor = v.name;
+        } else if (p.vendor === v.name) {
+          // Unchecked products that were previously assigned to this vendor revert to In-House
+          p.vendor = "In-House Kitchen";
+        }
+      });
+
+      bootstrap.Modal.getInstance(document.getElementById('vendorProductsModal')).hide();
+      renderProductManagementTable();
+      renderCatalog(catalog);
+      renderVendorsList();
+      alert(`Successfully saved product assignments for "${v.name}".`);
     }
 
     function updateIngredientVendorDropdown() {
